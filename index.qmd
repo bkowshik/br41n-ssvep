@@ -1,5 +1,13 @@
 # About this book {.unnumbered}
 
+::: {.callout-note}
+Developed as a submission to the **2026 SSVEP data analysis hackathon** at [br41n.io Spring School 2026](https://www.br41n.io/Spring-School-2026), organised by g.tec.
+:::
+
+::: {.callout-tip}
+**In a hurry?** Watch the [two-minute slide walkthrough](slides.html) — the entire pipeline in seven slides.
+:::
+
 A code-first walkthrough of the br41n.io SSVEP dataset, structured around the canonical EEG analysis pipeline: data → preprocessing → feature engineering → modelling → evaluation. Every chapter follows the same shape — runnable code, a generated artifact, then the theory that explains what the artifact shows.
 
 ## The core idea, in one picture

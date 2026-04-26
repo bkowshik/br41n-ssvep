@@ -1,5 +1,11 @@
 project:
   type: book
+  resources:
+    - "images/"
+  post-render:
+    - quarto render slides.qmd
+    - rm -rf _book/slides.html _book/slides_files
+    - mv slides.html slides_files _book/
 
 execute:
   freeze: auto

@@ -1,5 +1,7 @@
 # br41n.io SSVEP Data Analysis
 
+> Developed as a submission to the **2026 SSVEP data analysis hackathon** at [br41n.io Spring School 2026](https://www.br41n.io/Spring-School-2026), organised by g.tec.
+
 A code-first walkthrough of the [br41n.io](https://www.br41n.io/) SSVEP dataset, structured around the canonical EEG analysis pipeline: data → preprocessing → feature engineering → modelling → evaluation. Published as a Quarto book.
 
 ## Prerequisites
