@@ -1,5 +1,7 @@
 ---
 title: "The Recordings"
+description: "Walk through the eleven channels of all four .mat files and explain what each one carries."
+date-modified: 2026-04-26
 ---
 
 > Open the four `.mat` files, walk through the eleven channels, and explain what each one carries — including a small puzzle the data documentation doesn't resolve.

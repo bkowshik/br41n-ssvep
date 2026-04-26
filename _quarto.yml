@@ -38,7 +38,7 @@ format:
       - cosmo
       - brand
     page-layout: full
-    toc: false
+    toc: true
     fig-format: retina
     fig-dpi: 96
     grid:
