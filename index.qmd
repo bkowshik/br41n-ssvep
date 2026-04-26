@@ -1,3 +1,28 @@
-# Preface {.unnumbered}
+# About this book {.unnumbered}
 
-A code-first walkthrough of the br41n.io SSVEP dataset — from raw recordings to a working brain–computer interface, structured around the canonical EEG pipeline: data, preprocessing, feature engineering, modelling, evaluation.
+A code-first walkthrough of the br41n.io SSVEP dataset, structured around the canonical EEG analysis pipeline: data → preprocessing → feature engineering → modelling → evaluation. Every chapter follows the same shape — runnable code, a generated artifact, then the theory that explains what the artifact shows.
+
+## What is SSVEP?
+
+Steady-State Visual Evoked Potentials. When someone stares at a light flickering at frequency *f*, their visual cortex produces an EEG response that oscillates at the same frequency. By flickering several lights at distinguishable frequencies and reading the EEG, a brain–computer interface can tell which light the person is looking at — and use that as an input signal.
+
+## What's in the dataset
+
+- **2 subjects**, **2 training sessions each** — four `.mat` recordings in `data/`.
+- **8 EEG channels** clustered over visual cortex (PO7, PO3, POz, PO4, PO8, O1, Oz, O2), sampled at 256 Hz.
+- **4 stimulation frequencies**: 9, 10, 12, 15 Hz, delivered by an LED array (fVEP-LED).
+- A **trigger channel** marking which frequency is active, and a **pre-computed LDA prediction** from g.tec's pipeline that we use as a baseline.
+
+## How the book is structured
+
+| Part | Chapters |
+|---|---|
+| **Data** | What's in the recordings, where the SSVEP shows up |
+| **Preprocessing** | Filtering, epoching from triggers |
+| **Feature Engineering** | Spectral features, CCA / FBCCA template features |
+| **Modelling** | Turning features into a class label |
+| **Evaluation** | Time vs. accuracy, ITR, inter-subject variability |
+
+## How to read it
+
+Each chapter is one or more `code → artifact → theory` blocks. The code is meant to be run; the artifacts are regenerated from the code (and live in `images/` prefixed by the chapter filename); the theory after each artifact explains what just happened and why it matters.
