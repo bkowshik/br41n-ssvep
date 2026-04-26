@@ -346,7 +346,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="setup-load-filter-epoch" class="level2" data-number="6.1">
 <h2 data-number="6.1" class="anchored" data-anchor-id="setup-load-filter-epoch"><span class="header-section-number">6.1</span> Setup: load, filter, epoch</h2>
 <p>Same pipeline as Ch 4 + 5; reproduced here so the chapter is self-contained.</p>
-<div id="e6aba410" class="cell" data-execution_count="1">
+<div id="5124d9c7" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.io</span>
@@ -400,7 +400,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="reference-templates" class="level2" data-number="6.2">
 <h2 data-number="6.2" class="anchored" data-anchor-id="reference-templates"><span class="header-section-number">6.2</span> Reference templates</h2>
 <p>For each candidate stimulation frequency <em>f</em>, we build a synthetic reference signal — a small set of sines and cosines at <em>f</em> and its harmonics, sampled at the same length and rate as one epoch. CCA will then ask: which linear combination of the eight EEG channels correlates best with which linear combination of these reference signals?</p>
-<div id="bc574741" class="cell" data-execution_count="2">
+<div id="5805600b" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build_template(freq, n_samples, fs, n_harmonics<span class="op">=</span>N_HARMONICS):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Return (n_samples, 2 * n_harmonics) array of sin/cos at freq, 2·freq, ..."""</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> np.arange(n_samples) <span class="op">/</span> fs</span>
@@ -444,7 +444,7 @@ Figure&nbsp;6.1: Reference template for the 9 Hz class — fundamental sin/cos p
 <section id="scoring-an-epoch-with-cca" class="level2" data-number="6.3">
 <h2 data-number="6.3" class="anchored" data-anchor-id="scoring-an-epoch-with-cca"><span class="header-section-number">6.3</span> Scoring an epoch with CCA</h2>
 <p>Canonical correlation analysis finds the linear projection of the EEG channels and the linear projection of the template that are maximally correlated. We use only the largest canonical correlation (the first component) as the per-class score.</p>
-<div id="bf6ebe02" class="cell" data-execution_count="4">
+<div id="55a37955" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> cca_score(X, Y):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Largest canonical correlation between X (n_samples, n_x) and Y (n_samples, n_y)."""</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    cca <span class="op">=</span> CCA(n_components<span class="op">=</span><span class="dv">1</span>, max_iter<span class="op">=</span><span class="dv">500</span>)</span>
@@ -541,7 +541,7 @@ Figure&nbsp;6.3: CCA scores for every (trial, candidate) pair. Rows are trials s
 <section id="filter-bank-cca" class="level2" data-number="6.5">
 <h2 data-number="6.5" class="anchored" data-anchor-id="filter-bank-cca"><span class="header-section-number">6.5</span> Filter-bank CCA</h2>
 <p>The standard fix is FBCCA: split the filtered EEG into multiple sub-bands, run CCA per sub-band against the same templates, and combine the per-band correlations into a single score per class. Each sub-band isolates one harmonic family — the lowest band sees the fundamental, the next band sees the second harmonic, and so on — so CCA in each band can lock onto its target without being washed out by the others.</p>
-<div id="90e93ad5" class="cell" data-execution_count="7">
+<div id="25f3a336" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>SUB_BANDS <span class="op">=</span> [(<span class="dv">6</span>, <span class="dv">14</span>), (<span class="dv">14</span>, <span class="dv">22</span>), (<span class="dv">22</span>, <span class="dv">30</span>), (<span class="dv">30</span>, <span class="dv">40</span>)]</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>FBCCA_A, FBCCA_B <span class="op">=</span> <span class="fl">1.25</span>, <span class="fl">0.25</span>  <span class="co"># Chen et al. 2015 weighting parameters</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -611,7 +611,7 @@ Figure&nbsp;6.4: Per-class scores for one of the trials plain CCA gets wrong —
   FBCCA scores: {9: np.float64(0.364), 10: np.float64(0.239), 12: np.float64(0.405), 15: np.float64(0.131)} → pick 12</code></pre>
 </div>
 </div>
-<div id="0fda70bf" class="cell" data-execution_count="9">
+<div id="38593bbd" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fb_mat <span class="op">=</span> np.stack([fbcca_class_scores(ep, fs) <span class="cf">for</span> ep <span class="kw">in</span> epochs])</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>fb_pred <span class="op">=</span> np.array([STIM_FREQS[i] <span class="cf">for</span> i <span class="kw">in</span> fb_mat.argmax(axis<span class="op">=</span><span class="dv">1</span>)])</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>fb_acc <span class="op">=</span> (fb_pred <span class="op">==</span> labels).mean()</span>

@@ -347,7 +347,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="loading-and-filtering" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="loading-and-filtering"><span class="header-section-number">4.1</span> Loading and filtering</h2>
 <p>Same setup as Ch 3 — running example, filter chain applied to all eight EEG channels. CH10 (the trigger) and CH11 (the LDA output) are integer step functions; filtering would smear them, so we leave them alone.</p>
-<div id="0db36cbb" class="cell" data-execution_count="1">
+<div id="c19b97ed" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.io</span>
@@ -417,7 +417,7 @@ Figure&nbsp;4.1: CH10 across the full session — the only document of trial str
 </section>
 <section id="detecting-trial-boundaries" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="detecting-trial-boundaries"><span class="header-section-number">4.3</span> Detecting trial boundaries</h2>
-<div id="41e4ab70" class="cell" data-execution_count="3">
+<div id="36f0f723" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_trials(y):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Return [(start_idx, end_idx, freq_hz), ...] from CH10 transitions."""</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    ch10 <span class="op">=</span> y[<span class="dv">9</span>].astype(<span class="bu">int</span>)</span>
@@ -482,7 +482,7 @@ Figure&nbsp;4.2: Trial count per stimulation class.
 </section>
 <section id="building-the-epoch-tensor" class="level2" data-number="4.5">
 <h2 data-number="4.5" class="anchored" data-anchor-id="building-the-epoch-tensor"><span class="header-section-number">4.5</span> Building the epoch tensor</h2>
-<div id="55bb78b2" class="cell" data-execution_count="5">
+<div id="c4327659" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> epoch(y_filt, trials, eeg_idx<span class="op">=</span><span class="bu">slice</span>(<span class="dv">1</span>, <span class="dv">9</span>)):</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Stack trials into (n_trials, n_channels, n_samples). All trials must share length."""</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    lengths <span class="op">=</span> {e <span class="op">-</span> s <span class="cf">for</span> s, e, _ <span class="kw">in</span> trials}</span>
