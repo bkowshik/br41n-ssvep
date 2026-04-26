@@ -58,6 +58,16 @@ The first full render takes a few minutes (filter design, CCA fits, sweeps). Sub
 └── requirements.txt
 ```
 
+## Continuous deployment
+
+`.github/workflows/publish.yml` renders the book on every push to `main` and publishes it to the `gh-pages` branch via [`quarto-actions/publish`](https://github.com/quarto-dev/quarto-actions). To enable serving:
+
+1. Push the workflow to `main`. The first run creates the `gh-pages` branch automatically.
+2. In **Settings → Pages** of the GitHub repository, set **Source: Deploy from a branch**, branch `gh-pages`, folder `/ (root)`.
+3. The book becomes available at `https://<user>.github.io/<repo>/` after the next push (typically 1–2 minutes after the workflow finishes).
+
+The workflow can also be triggered manually from the **Actions** tab via *Run workflow*.
+
 ## Notes
 
 - `_book/`, `_freeze/`, and `.quarto/` are gitignored — render artifacts only.
