@@ -37,5 +37,13 @@ format:
     theme:
       - cosmo
       - brand
+    page-layout: full
+    toc: false
+    fig-format: retina
+    fig-dpi: 96
+    grid:
+      sidebar-width: 225px
+      body-width: 1000px
+      margin-width: 0px
   pdf:
     documentclass: scrreprt

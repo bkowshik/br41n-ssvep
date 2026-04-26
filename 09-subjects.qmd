@@ -1,11 +1,11 @@
 # People Are Different
 
-> Run the full pipeline on both subjects and compare the results. With N = 2 we cannot draw population conclusions, but we can illustrate the well-documented BCI-illiteracy phenomenon and tie our observations to the literature (Volosyak et al.).
+> Run the full pipeline on both subjects and compare. With N = 2 we cannot draw population conclusions, but we can check whether our two subjects fall in the range reported by the largest published SSVEP-BCI demographics study, @guger2012.
 
 ## Scope
 
-- What's in: subject-by-subject ITR curves, comparison of peak ITR and the window length at which it occurs, comparison against the population statistics in the Volosyak paper.
-- What's deferred: cross-subject generalization (training on one, testing on another) → out of scope. Within-subject session-to-session variability → mention briefly using both training_1 and training_2 if time allows.
+- What's in: subject-by-subject ITR curves, comparison of peak ITR and the window length at which it occurs, comparison against the population statistics reported by Guger et al.
+- What's deferred: cross-subject generalization (training on one, testing on another) → out of scope. Within-subject session-to-session variability → mention briefly using both `training_1` and `training_2` if time allows.
 
 ## Blocks
 
@@ -17,6 +17,6 @@
 
 ### Block 2: Tying it to the literature
 
-- **Code:** No code in this block — a small results table summarizing peak ITR and best accuracy per subject, alongside reference numbers from the Volosyak paper.
+- **Code:** No code in this block — a small results table summarizing peak accuracy and peak ITR per subject, alongside the headline numbers from @guger2012.
 - **Artifact:** A simple Markdown table (no figure required).
-- **Theory:** Summarize the Volosyak paper's main finding: a non-trivial fraction of the population (often quoted as ~10–25%) cannot drive an SSVEP-BCI to useful performance levels — "BCI illiteracy." What the population variability means for product design (calibration, fallback paradigms) and for honest reporting in BCI research. Close with what we *would* need to test the BCI-illiteracy claim properly: many more subjects, standardized recording, pre-registered evaluation.
+- **Theory:** What the Guger paper found: 53 subjects, the same 4-class / 8-channel / LED-flicker setup as ours, grand-average accuracy 95.5 %, 96.2 % above 80 %, nobody below 60 %. The takeaway is *optimistic* for SSVEP — unlike motor-imagery or P300 paradigms where a substantial fraction of users perform at chance ("BCI illiteracy"), SSVEP works for almost everyone. Frame our N = 2 result as "do our subjects sit inside Guger's distribution?" rather than "do we observe BCI illiteracy?" Close with what would be needed to test population-level claims rigorously: many more subjects, standardized recording, pre-registered evaluation.

@@ -1,22 +1,106 @@
-# The Recordings
+---
+title: "The Recordings"
+---
 
-> Open one of the four `.mat` files, walk through the 11 channels, and explain what each one carries. By the end, the reader can load any session in this dataset and explain what every column means.
+> Open the four `.mat` files, walk through the eleven channels, and explain what each one carries — including a small puzzle the data documentation doesn't resolve.
 
-## Scope
+## What's inside a `.mat` file
 
-- What's in: file structure, channel meanings (CH1 sample time, CH2–9 EEG, CH10 trigger, CH11 g.tec LDA output), sampling rate.
-- What's deferred: trial epoching from CH10 → Ch 4 (Epoching). Spectral content of EEG channels → Ch 2.
+Two top-level fields in every session: `fs` (the sampling rate) and `y` (the data, channels × time). Eleven channels at 256 Hz, recording about three and a half minutes per session — matching the four-minute runs reported in @guger2012.
 
-## Blocks
+What each row carries:
 
-### Block 1: What's inside a `.mat` file
+- **CH1** is a linear ramp — the sample-time index, not a recorded signal.
+- **CH2–CH9** are the eight occipital EEG channels (PO7, PO3, POz, PO4, PO8, O1, Oz, O2).
+- **CH10** sits at zero between trials and steps to one of `{9, 10, 12, 15}` during stimulation, encoding the active LED frequency in Hz.
+- **CH11** is g.tec's LDA prediction — our baseline competitor for everything that follows.
 
-- **Code:** Load `data/subject_1_fvep_led_training_1.mat` with `scipy.io.loadmat`. Print top-level keys and the shape/dtype of the main data array. Plot all 11 channels stacked (shared x-axis) for the first ~30 s.
-- **Artifact:** `images/01-recordings_channels.png` — 11-row stacked plot. Reader should see CH1 as a linear ramp (sample time), CH2–9 as oscillating EEG, CH10 as a step function between {9, 10, 12, 15, 0}, and CH11 as a step function tracking CH10 with some lag/error.
-- **Theory:** The 11-channel layout from `data_description.txt`. Why CH1 is sample time (not a recorded signal). Why CH10 encodes the active stimulation frequency. Why CH11 is g.tec's pre-computed LDA output — our baseline competitor for everything that follows.
+One thing that isn't in `data_description.txt`: CH11's non-zero values are small integers — class indices, not frequencies. The class-to-frequency mapping comes from `data/subject_1_fvep_led_training_1_result2d.PNG`, which shows the g.tec analysis tool with the four classes laid out as **1 → 15 Hz, 2 → 12, 3 → 10, 4 → 9** (highest class index → lowest frequency). Always audit *every* file the organizers shipped, not just the obvious-looking text one.
 
-### Block 2: A closer look at CH10 and CH11
+## The four recordings
 
-- **Code:** Plot only CH10 and CH11 over a longer window (e.g. one full session). Compute the per-sample agreement rate between CH10 (ground truth) and CH11 (g.tec's guess).
-- **Artifact:** `images/01-recordings_trigger_vs_lda.png` — two-row plot, trigger on top, LDA prediction below, with shaded regions where they agree.
-- **Theory:** What "agreement" means here and why CH11 lags / errs at trial boundaries. This sets the bar: any classifier we build later should match or beat the agreement rate visible in this figure.
+The dataset only ships four files, so we'll plot all of them. EEG panels are clipped to ±50 µV (clinical-EEG display convention); the amplifier-startup transient at *t* = 0 is left visible as a truncated spike.
+
+CH11 also fires intermittently — it only outputs a class when the LDA's confidence (presumably) crosses a threshold, so *per-sample* agreement against CH10 isn't the right way to evaluate the baseline. That needs trial-level evaluation, deferred to Ch 7.
+
+```{python}
+from pathlib import Path
+import numpy as np
+import scipy.io
+import matplotlib.pyplot as plt
+
+DATA_DIR = Path("data")
+
+LABELS = [
+    "CH1: sample time",
+    "CH2: PO7", "CH3: PO3", "CH4: POz", "CH5: PO4",
+    "CH6: PO8", "CH7: O1",  "CH8: Oz",  "CH9: O2",
+    "CH10: trigger (Hz)",
+    "CH11: g.tec LDA",
+]
+
+def plot_session(path):
+    mat = scipy.io.loadmat(path)
+    fs = int(mat["fs"][0, 0])
+    y = mat["y"]
+    n_channels, n_samples = y.shape
+    t = np.arange(n_samples) / fs
+
+    print(f"File:          {path.name}")
+    print(f"Sampling rate: {fs} Hz")
+    print(f"Shape:         {y.shape}  ({n_channels} channels × {n_samples} samples)")
+    print(f"Duration:      {n_samples / fs:.1f} s")
+
+    fig, axes = plt.subplots(11, 1, figsize=(14, 11), sharex=True)
+    for i, ax in enumerate(axes):
+        ax.plot(t, y[i, :], lw=0.4)
+        ax.set_ylabel(LABELS[i], fontsize=8, rotation=0, ha="right", va="center")
+        ax.tick_params(labelsize=7)
+        if 1 <= i <= 8:
+            ax.set_ylim(-50, 50)
+    axes[-1].set_xlabel("Time (s)")
+    fig.suptitle(path.name, fontsize=10)
+    fig.tight_layout()
+    fig.savefig(f"images/01-recordings_{path.stem}.png", dpi=200, bbox_inches="tight")
+    plt.show()
+```
+
+### Subject 1 x Run 1
+
+```{python}
+#| label: fig-s1-r1
+#| fig-cap: "Subject 1, run 1."
+plot_session(DATA_DIR / "subject_1_fvep_led_training_1.mat")
+```
+
+Twenty stimulation blocks on CH10, evenly split across the four frequencies. CH11 is the standout: it only ever outputs class 3, regardless of which LED is flashing. The LDA in this session is broken in some way — we'll come back to it in Ch 7 when we evaluate the baseline trial by trial.
+
+### Subject 1 x Run 2
+
+```{python}
+#| label: fig-s1-r2
+#| fig-cap: "Subject 1, run 2."
+plot_session(DATA_DIR / "subject_1_fvep_led_training_2.mat")
+```
+
+Same trial structure — twenty balanced blocks. CH11 now fires three of the four classes; class 2 (12 Hz, per the mapping above) never appears, even though the trigger does step to 12 Hz five times. The LDA isn't broken in the same way as run 1, but it's still missing a class.
+
+### Subject 2 x Run 1
+
+```{python}
+#| label: fig-s2-r1
+#| fig-cap: "Subject 2, run 1."
+plot_session(DATA_DIR / "subject_2_fvep_led_training_1.mat")
+```
+
+CH11 covers all four classes here, and fires for a much larger fraction of samples than either subject-1 session — the LDA is genuinely *trying* in this run. The flip side: a couple of EEG channels (notably PO3 and O1) push well past the ±50 µV clip throughout, which usually points at electrode contact issues rather than brain signal.
+
+### Subject 2 x Run 2
+
+```{python}
+#| label: fig-s2-r2
+#| fig-cap: "Subject 2, run 2."
+plot_session(DATA_DIR / "subject_2_fvep_led_training_2.mat")
+```
+
+Twenty trials, all four classes on CH11, EEG channels mostly quiet within the clip. The cleanest of the four for downstream work — and the one we'll lean on as the running example in later chapters.

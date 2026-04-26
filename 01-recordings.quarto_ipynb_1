@@ -1,0 +1,143 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "---\n",
+        "title: \"The Recordings\"\n",
+        "---\n",
+        "\n",
+        "> Open one of the four `.mat` files, walk through the eleven channels, and explain what each one carries — including a small puzzle the data documentation doesn't resolve.\n",
+        "\n",
+        "## What's inside a `.mat` file"
+      ],
+      "id": "af216b39"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "from pathlib import Path\n",
+        "import numpy as np\n",
+        "import scipy.io\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "DATA_DIR = Path(\"data\")\n",
+        "mat = scipy.io.loadmat(DATA_DIR / \"subject_2_fvep_led_training_2.mat\")\n",
+        "fs = int(mat[\"fs\"][0, 0])\n",
+        "y = mat[\"y\"]\n",
+        "n_channels, n_samples = y.shape\n",
+        "print(f\"Sampling rate: {fs} Hz\")\n",
+        "print(f\"Shape: {y.shape}  ({n_channels} channels × {n_samples} samples)\")\n",
+        "print(f\"Duration: {n_samples / fs:.1f} s\")"
+      ],
+      "id": "5f85d376",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Two top-level fields in every session: `fs` (the sampling rate) and `y` (the data, channels × time). Eleven channels at 256 Hz, recording about three and a half minutes — matching the four-minute runs reported in @guger2012.\n",
+        "\n",
+        "The whole session, with all eleven channels stacked. The EEG panels are clipped to ±50 µV — the steady-state EEG sits within ~±20 µV (std ≈ 7 µV across channels), so this matches clinical-EEG display convention and clips only the largest ~1 % of samples (mostly eye-blink and movement artifact). The amplifier-startup transient at *t* = 0 is intentionally left visible as a truncated spike."
+      ],
+      "id": "52fba656"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| label: fig-channels\n",
+        "#| fig-cap: All 11 channels of one full session (~225 s). EEG panels clipped to ±50 µV per clinical-EEG display convention.\n",
+        "\n",
+        "LABELS = [\n",
+        "    \"CH1: sample time\",\n",
+        "    \"CH2: PO7\", \"CH3: PO3\", \"CH4: POz\", \"CH5: PO4\",\n",
+        "    \"CH6: PO8\", \"CH7: O1\",  \"CH8: Oz\",  \"CH9: O2\",\n",
+        "    \"CH10: trigger (Hz)\",\n",
+        "    \"CH11: g.tec LDA\",\n",
+        "]\n",
+        "\n",
+        "t = np.arange(n_samples) / fs\n",
+        "\n",
+        "fig, axes = plt.subplots(11, 1, figsize=(14, 11), sharex=True)\n",
+        "for i, ax in enumerate(axes):\n",
+        "    ax.plot(t, y[i, :], lw=0.4)\n",
+        "    ax.set_ylabel(LABELS[i], fontsize=8, rotation=0, ha=\"right\", va=\"center\")\n",
+        "    ax.tick_params(labelsize=7)\n",
+        "    if 1 <= i <= 8:\n",
+        "        ax.set_ylim(-50, 50)\n",
+        "axes[-1].set_xlabel(\"Time (s)\")\n",
+        "fig.tight_layout()\n",
+        "fig.savefig(\"images/01-recordings_channels.png\", dpi=200, bbox_inches=\"tight\")\n",
+        "plt.show()"
+      ],
+      "id": "fig-channels",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "The whole session at a glance — what each row carries:\n",
+        "\n",
+        "- **CH1** climbs in a straight line — the sample-time index, not a recorded signal.\n",
+        "- **CH2–CH9** are the eight occipital EEG channels (PO7, PO3, POz, PO4, PO8, O1, Oz, O2). The truncated spike at *t* = 0 is the amplifier settling; the steady-state EEG sits within roughly ±100 µV. You can already see the rhythm of the experiment by looking at the channels — bursts of activity during trials, calmer between them.\n",
+        "- **CH10** sits at zero between trials and steps to one of `{9, 10, 12, 15}` during stimulation, encoding the active LED frequency in Hz. Counting the blocks gives a rough sense of how many trials per class the session contains.\n",
+        "- **CH11** is g.tec's LDA prediction. It only fires intermittently — the gaps are just as informative as the activations, and the next block looks at why.\n",
+        "\n",
+        "## The trigger and the LDA — and a puzzle\n",
+        "\n",
+        "Two things about CH10 and CH11 visible in the figure above are worth calling out, neither of which is in `data_description.txt`:\n",
+        "\n",
+        "1. **CH11 is not in Hz.** Its non-zero values are small integers — class indices, not frequencies. The class-to-frequency mapping is documented, just not in the description file: `data/subject_1_fvep_led_training_1_result2d.PNG` shows the g.tec analysis tool with a parameters panel listing the four classes top-to-bottom as **1 → 15 Hz, 2 → 12, 3 → 10, 4 → 9** (highest class index → lowest frequency). Always audit *every* file the organizers shipped, not just the obvious-looking text one.\n",
+        "2. **CH11 fires intermittently.** It outputs a class only when the LDA's confidence (presumably) crosses a threshold. *Per-sample* agreement isn't the right way to evaluate the baseline; that needs trial-level evaluation, deferred to Ch 7.\n",
+        "\n",
+        "One quick sanity check across the four sessions — what classes does the LDA ever output?"
+      ],
+      "id": "19b125f3"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "for path in sorted(DATA_DIR.glob(\"subject_*_fvep_led_training_*.mat\")):\n",
+        "    classes = np.unique(scipy.io.loadmat(path)[\"y\"][10]).astype(int)\n",
+        "    print(f\"{path.name}: CH11 values = {classes}\")"
+      ],
+      "id": "3688db53",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Three sessions exercise all four classes. `subject_1_fvep_led_training_1` only ever fires class 3 — its LDA is clearly broken in some way. We'll come back to that in Ch 7 when we evaluate the baseline trial by trial against the trigger.\n",
+        "\n",
+        "## What we have, what's still missing\n",
+        "\n",
+        "We can now load any of the four sessions and explain every column. What we still don't know — addressed by the next chapters:\n",
+        "\n",
+        "- **Trial structure** (where each stimulation block begins and ends): recovered from CH10 in Ch 4.\n",
+        "- **Spectral content** of the EEG channels (where the SSVEP actually shows up): Ch 2.\n",
+        "- **A fair comparison** between g.tec's CH11 baseline and anything we build: Ch 7, once we have epochs and a classifier of our own."
+      ],
+      "id": "2697b31f"
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "name": "python3",
+      "language": "python",
+      "display_name": "Python 3 (ipykernel)",
+      "path": "/Users/bkowshik/code/bkowshik/br41n_ssvep/.venv/share/jupyter/kernels/python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}
