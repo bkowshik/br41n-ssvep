@@ -1,6 +1,9 @@
 project:
   type: book
 
+execute:
+  freeze: auto
+
 book:
   title: "br41n.io - SSVEP Data Analysis"
   author: "Bhargav Kowshik"
@@ -28,6 +31,7 @@ book:
         - 09-subjects.qmd
     - summary.qmd
   appendices:
+    - acronyms.qmd
     - references.qmd
 
 bibliography: references.bib
@@ -37,13 +41,13 @@ format:
     theme:
       - cosmo
       - brand
+    css: custom.css
     page-layout: full
     toc: true
+    lightbox: auto
     fig-format: retina
     fig-dpi: 96
     grid:
       sidebar-width: 225px
       body-width: 1000px
       margin-width: 0px
-  pdf:
-    documentclass: scrreprt
