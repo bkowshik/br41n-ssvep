@@ -1,22 +1,199 @@
-# People Are Different
+---
+title: "People Are Different"
+description: "Run the full pipeline on both subjects and compare. With N = 2 we can't draw population conclusions, but we can check whether our subjects fall in the range reported by the literature."
+date-modified: 2026-04-26
+---
 
 > Run the full pipeline on both subjects and compare. With N = 2 we cannot draw population conclusions, but we can check whether our two subjects fall in the range reported by the largest published SSVEP-BCI demographics study, @guger2012.
 
-## Scope
+## Setup
 
-- What's in: subject-by-subject ITR curves, comparison of peak ITR and the window length at which it occurs, comparison against the population statistics reported by Guger et al.
-- What's deferred: cross-subject generalization (training on one, testing on another) → out of scope. Within-subject session-to-session variability → mention briefly using both `training_1` and `training_2` if time allows.
+The pipeline of the last six chapters wrapped into a function: load → filter → epoch. We call it once per `.mat` file and run the FBCCA classifier from Ch 6 across truncated epoch lengths.
 
-## Blocks
+```{python}
+from pathlib import Path
+import numpy as np
+import scipy.io
+import matplotlib.pyplot as plt
+from scipy.signal import butter, filtfilt, iirnotch
+from sklearn.cross_decomposition import CCA
 
-### Block 1: Accuracy and ITR side-by-side
+DATA_DIR = Path("data")
+STIM_FREQS = [9, 10, 12, 15]
+N_HARMONICS = 2
+SUB_BANDS = [(6, 14), (14, 22), (22, 30), (30, 40)]
+WINDOW_LENGTHS = np.arange(1.0, 7.5, 0.5)
 
-- **Code:** Re-run the Ch 8 pipeline for both subjects. Plot subject 1 vs subject 2 on the same axes for both accuracy-vs-window and ITR-vs-window.
-- **Artifact:** `images/09-subjects_comparison.png` — two-panel figure, accuracy on the left, ITR on the right, both subjects overlaid.
-- **Theory:** Read off the figure: differences in peak ITR, differences in the window at which performance saturates, differences in maximum achievable accuracy. Avoid drawing strong conclusions — N = 2 is anecdote, not evidence.
 
-### Block 2: Tying it to the literature
+def make_filters(fs, low=5.0, high=40.0, line=50.0, order=4, notch_q=30):
+    bp_b, bp_a = butter(order, [low, high], btype="band", fs=fs)
+    n_b, n_a = iirnotch(line, notch_q, fs=fs)
+    return (bp_b, bp_a), (n_b, n_a)
 
-- **Code:** No code in this block — a small results table summarizing peak accuracy and peak ITR per subject, alongside the headline numbers from @guger2012.
-- **Artifact:** A simple Markdown table (no figure required).
-- **Theory:** What the Guger paper found: 53 subjects, the same 4-class / 8-channel / LED-flicker setup as ours, grand-average accuracy 95.5 %, 96.2 % above 80 %, nobody below 60 %. The takeaway is *optimistic* for SSVEP — unlike motor-imagery or P300 paradigms where a substantial fraction of users perform at chance ("BCI illiteracy"), SSVEP works for almost everyone. Frame our N = 2 result as "do our subjects sit inside Guger's distribution?" rather than "do we observe BCI illiteracy?" Close with what would be needed to test population-level claims rigorously: many more subjects, standardized recording, pre-registered evaluation.
+
+def find_trials(y):
+    ch10 = y[9].astype(int)
+    active = (ch10 != 0).astype(int)
+    diff = np.diff(active)
+    starts = np.where(diff == 1)[0] + 1
+    ends = np.where(diff == -1)[0] + 1
+    return [(int(s), int(e), int(ch10[s])) for s, e in zip(starts, ends)]
+
+
+def load_session(path):
+    mat = scipy.io.loadmat(path)
+    fs = int(mat["fs"][0, 0])
+    y = mat["y"]
+    bp, notch = make_filters(fs)
+    y_filt = y.astype(float).copy()
+    for ci in range(1, 9):
+        y_filt[ci] = filtfilt(*notch, filtfilt(*bp, y[ci]))
+    trials = find_trials(y)
+    n_samples = trials[0][1] - trials[0][0]
+    epochs = np.stack([y_filt[1:9, s:s + n_samples] for s, _, _ in trials])
+    labels = np.array([fr for _, _, fr in trials])
+    return epochs, labels, fs
+
+
+def build_template(freq, n_samples, fs, n_harmonics=N_HARMONICS):
+    t = np.arange(n_samples) / fs
+    refs = []
+    for h in range(1, n_harmonics + 1):
+        refs.append(np.sin(2 * np.pi * h * freq * t))
+        refs.append(np.cos(2 * np.pi * h * freq * t))
+    return np.stack(refs, axis=1)
+
+
+def cca_score(X, Y):
+    cca = CCA(n_components=1, max_iter=500)
+    cca.fit(X, Y)
+    Xc, Yc = cca.transform(X, Y)
+    return float(np.corrcoef(Xc.ravel(), Yc.ravel())[0, 1])
+
+
+def fbcca_predict(epoch, fs, sub_bands=SUB_BANDS, a=1.25, b=0.25):
+    n = epoch.shape[1]
+    weights = np.array([(i + 1) ** -a + b for i in range(len(sub_bands))])
+    band_signals = []
+    for low, high in sub_bands:
+        b_, a_ = butter(4, [low, high], btype="band", fs=fs)
+        band_signals.append(filtfilt(b_, a_, epoch, axis=-1))
+    scores = np.zeros(len(STIM_FREQS))
+    for fi, freq in enumerate(STIM_FREQS):
+        Y = build_template(freq, n, fs, N_HARMONICS)
+        for bi, sig in enumerate(band_signals):
+            scores[fi] += weights[bi] * cca_score(sig.T, Y) ** 2
+    return STIM_FREQS[int(np.argmax(scores))]
+
+
+def wolpaw_itr(p, N, T):
+    p = np.asarray(p, dtype=float)
+    bits = np.zeros_like(p)
+    middle = (p > 1.0 / N) & (p < 1.0)
+    bits[p >= 1.0] = np.log2(N)
+    bits[middle] = (np.log2(N) + p[middle] * np.log2(p[middle])
+                    + (1 - p[middle]) * np.log2((1 - p[middle]) / (N - 1)))
+    return bits * 60.0 / T
+
+
+def sweep(epochs, labels, fs, lengths):
+    accs = []
+    for L in lengths:
+        n_L = int(L * fs)
+        truncated = epochs[:, :, :n_L]
+        preds = np.array([fbcca_predict(ep, fs) for ep in truncated])
+        accs.append((preds == labels).mean())
+    return np.array(accs)
+
+
+SESSIONS = [
+    ("S1 run 1", "subject_1_fvep_led_training_1.mat", "C0", "-"),
+    ("S1 run 2", "subject_1_fvep_led_training_2.mat", "C0", "--"),
+    ("S2 run 1", "subject_2_fvep_led_training_1.mat", "C1", "-"),
+    ("S2 run 2", "subject_2_fvep_led_training_2.mat", "C1", "--"),
+]
+
+results = []
+for name, fname, color, ls in SESSIONS:
+    epochs, labels, fs = load_session(DATA_DIR / fname)
+    accs = sweep(epochs, labels, fs, WINDOW_LENGTHS)
+    itrs = wolpaw_itr(accs, N=4, T=WINDOW_LENGTHS)
+    results.append({"name": name, "accs": accs, "itrs": itrs, "color": color, "ls": ls})
+    print(f"  {name:<10} done — peak acc {accs.max():.0%}, peak ITR {itrs.max():.1f} bits/min")
+```
+
+## Accuracy and ITR side by side
+
+```{python}
+#| label: fig-subject-comparison
+#| fig-cap: "Accuracy (left) and ITR (right) vs epoch length, for all four sessions. Subject 1 in blue, subject 2 in orange; solid = run 1, dashed = run 2."
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 4.8))
+
+for r in results:
+    axes[0].plot(WINDOW_LENGTHS, r["accs"], r["ls"], color=r["color"],
+                 marker="o", lw=1.5, label=r["name"])
+    axes[1].plot(WINDOW_LENGTHS, r["itrs"], r["ls"], color=r["color"],
+                 marker="o", lw=1.5, label=r["name"])
+
+axes[0].axhline(0.25, color="C3", ls=":", alpha=0.5, label="chance (25 %)")
+axes[0].set_xlabel("Epoch length (s)")
+axes[0].set_ylabel("Accuracy")
+axes[0].set_ylim(0, 1.05)
+axes[0].set_title("Accuracy")
+axes[0].legend()
+axes[0].grid(alpha=0.3)
+
+axes[1].set_xlabel("Epoch length (s)")
+axes[1].set_ylabel("ITR (bits/min)")
+axes[1].set_title("Information Transfer Rate")
+axes[1].legend()
+axes[1].grid(alpha=0.3)
+
+fig.tight_layout()
+fig.savefig("images/09-subjects_comparison.png", dpi=200, bbox_inches="tight")
+plt.show()
+```
+
+The two subjects clearly separate. Subject 1 reaches ~90 % accuracy by 2 s and stays there; subject 2 needs the full 7-second epoch to come close. The ITR curves invert this nicely: subject 1's peak sits in the 1.5–2.5 s range and is much taller (the user can take a decision every second or two with high confidence), while subject 2's curve is flatter and lower.
+
+This is the *opposite* of the ranking we'd guess from Ch 1. Back there, we picked subject 2 run 2 as the "running example" because it had the cleanest CH11 LDA output. CH11 turned out to be a poor proxy for what our own classifier could extract — subject 1's CCA-friendly signal beats subject 2's visually-clean baseline. The lesson: don't let the shipped baseline pick your favourite subject.
+
+## Peak performance per session
+
+```{python}
+print(f"{'session':<10}  {'peak acc':<9}  {'@ T (s)':<9}  {'peak ITR':<10}  {'@ T (s)':<9}")
+print(f"{'-' * 10}  {'-' * 9}  {'-' * 9}  {'-' * 10}  {'-' * 9}")
+for r in results:
+    i_acc = int(np.argmax(r["accs"]))
+    i_itr = int(np.argmax(r["itrs"]))
+    print(f"{r['name']:<10}  {r['accs'][i_acc]:<9.0%}  {WINDOW_LENGTHS[i_acc]:<9.1f}  "
+          f"{r['itrs'][i_itr]:<10.1f}  {WINDOW_LENGTHS[i_itr]:<9.1f}")
+```
+
+The columns matter together. Looking at peak accuracy alone, all four sessions clear 80 %, which would suggest "everyone is fine". But peak ITR exposes the gap: subject 1's ITR roughly doubles subject 2's. Using accuracy as the ranking metric hides the fact that the two subjects are operating at very different bandwidth tiers.
+
+## Where do our subjects sit in the literature?
+
+The largest published demographics study for this exact setup — 4-class LED-flicker SSVEP with 8 occipital channels — is @guger2012, with **53 subjects**. Their headline numbers:
+
+- **Mean accuracy: 95.5 %** across the population.
+- **96.2 % of subjects scored above 80 % accuracy.**
+- **No subject scored below 60 %.**
+
+That last figure is the striking one. Other BCI paradigms (motor imagery, P300) routinely have a "BCI illiteracy" tail of users who can't drive the system above chance. SSVEP doesn't have that tail — the response is automatic, requires no mental strategy, and works for almost everyone with intact vision.
+
+Our N = 2 fits inside that distribution. Both subjects clear 80 % at the full epoch (subject 1 hits 100 % on run 2; subject 2 reaches 95 % on run 2). Subject 2's run 1 caps at 80 %, which would have placed them at the 96th-percentile floor of @guger2012. Nothing pathological, just on the harder end.
+
+We can't say more than that. With two subjects we can verify "we look like we belong in the published distribution"; we cannot estimate the distribution itself, predict where a new subject would land, or claim our pipeline outperforms anyone else's. The right shape of evidence for those questions is multi-site, pre-registered, with the sample size needed to bound the metric of interest — not a thoughtful re-analysis of one dataset.
+
+## What N = 2 can't tell us
+
+Things this analysis cannot answer, ordered by how often they get answered anyway:
+
+- **Population accuracy.** Any number we report (mean, peak, peak ITR) on N = 2 is anecdote. Confidence intervals on a two-subject mean are wider than the dataset's full range.
+- **Which classifier is "best".** CCA / FBCCA dominated CH11 here, but on subject 1 plain CCA already saturates at 100 %; FBCCA's contribution can't be measured. A larger sample would show whether the FBCCA gain is real or a single-trial fluke.
+- **What predicts a "good" subject.** Maybe alpha amplitude, electrode contact quality, attention, age, eye dominance, time-of-day. We have no leverage on any of this with two people.
+- **Within-subject day-to-day stability.** Each subject did two runs, recorded back-to-back; the variability we see is between-runs-within-session, not across genuine sessions on different days. The latter is what BCI deployment cares about.
+
+The honest summary: this dataset is large enough to *develop* and *verify* a pipeline (which is what the rest of the book did), and small enough that any quantitative claim about "users in general" requires a different study to justify. SSVEP's robust population profile, established by @guger2012 and confirmed in subsequent multi-site studies, is the reason a competition or product can ship with this paradigm without much per-user calibration — but the evidence for that reliability lives in those larger studies, not here.

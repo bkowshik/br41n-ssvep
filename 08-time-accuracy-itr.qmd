@@ -1,22 +1,220 @@
-# Time, Accuracy, and Information Transfer Rate
+---
+title: "Time, Accuracy, and Information Transfer Rate"
+description: "Sweep epoch length to quantify the BCI's central tradeoff: longer epochs give more reliable classification but slower decisions. Convert raw accuracy into Information Transfer Rate."
+date-modified: 2026-04-26
+---
 
 > Quantify the dataset's central tradeoff: longer epochs give more reliable classification but slower BCI response. Replicate the framing of g.tec's `result2d.PNG`, then convert raw accuracy into Information Transfer Rate (ITR) — the metric that actually matters for a brain–computer interface.
 
-## Scope
+## Setup
 
-- What's in: accuracy-vs-window-length sweep, the Wolpaw ITR formula, ITR vs window length, the location of the ITR maximum.
-- What's deferred: per-subject differences → Ch 9. Online / asynchronous BCI considerations → out of scope.
+The same load → filter → epoch pipeline as the last few chapters. The epoch tensor is `(20, 8, 1884)` — 7.36 s per trial. To study epoch-length effects, we'll truncate that third axis and re-run the classifier.
 
-## Blocks
+```{python}
+from pathlib import Path
+import numpy as np
+import scipy.io
+import matplotlib.pyplot as plt
+from scipy.signal import butter, filtfilt, iirnotch
+from sklearn.cross_decomposition import CCA
 
-### Block 1: Accuracy as a function of epoch length
+DATA_DIR = Path("data")
+STIM_FREQS = [9, 10, 12, 15]
+N_HARMONICS = 2
+SUB_BANDS = [(6, 14), (14, 22), (22, 30), (30, 40)]
 
-- **Code:** For one subject, sweep epoch lengths from 1 s to 10 s in 0.5-s steps. At each length, re-epoch the data, run the best classifier from Ch 7, and compute total accuracy. Plot accuracy vs window length.
-- **Artifact:** `images/08-time-accuracy-itr_accuracy.png` — accuracy curve from 1 s to 10 s. Compare visually with `data/subject_1_fvep_led_training_1_result2d.PNG` from g.tec.
-- **Theory:** Why accuracy improves with epoch length: more cycles of the stimulus → finer frequency resolution → cleaner CCA / PSD features → better separation. The expected "knee" around 5–6 s where additional time yields diminishing returns.
+mat = scipy.io.loadmat(DATA_DIR / "subject_2_fvep_led_training_2.mat")
+fs = int(mat["fs"][0, 0])
+y = mat["y"]
 
-### Block 2: From accuracy to Information Transfer Rate
 
-- **Code:** Apply the Wolpaw ITR formula: `ITR = (log2(N) + p*log2(p) + (1-p)*log2((1-p)/(N-1))) * (60 / T)` where N = 4 classes, p = accuracy, T = epoch length in seconds. Compute ITR at each window length from Block 1. Plot ITR (bits/min) vs window length on the same x-axis.
-- **Artifact:** `images/08-time-accuracy-itr_itr.png` — ITR curve, ideally with a clear maximum somewhere short of where accuracy plateaus.
-- **Theory:** What ITR measures and why it's the right metric for a BCI: bits-per-minute combines accuracy with speed. Worked example: 99% accuracy at 10 s vs 85% at 2 s — show that the latter delivers more usable bandwidth despite lower per-decision accuracy. Why BCI papers report ITR rather than accuracy alone.
+def make_filters(fs, low=5.0, high=40.0, line=50.0, order=4, notch_q=30):
+    bp_b, bp_a = butter(order, [low, high], btype="band", fs=fs)
+    n_b, n_a = iirnotch(line, notch_q, fs=fs)
+    return (bp_b, bp_a), (n_b, n_a)
+
+
+def apply_filters(x, bp, notch):
+    return filtfilt(*notch, filtfilt(*bp, x))
+
+
+def find_trials(y):
+    ch10 = y[9].astype(int)
+    active = (ch10 != 0).astype(int)
+    diff = np.diff(active)
+    starts = np.where(diff == 1)[0] + 1
+    ends = np.where(diff == -1)[0] + 1
+    return [(int(s), int(e), int(ch10[s])) for s, e in zip(starts, ends)]
+
+
+def build_template(freq, n_samples, fs, n_harmonics=N_HARMONICS):
+    t = np.arange(n_samples) / fs
+    refs = []
+    for h in range(1, n_harmonics + 1):
+        refs.append(np.sin(2 * np.pi * h * freq * t))
+        refs.append(np.cos(2 * np.pi * h * freq * t))
+    return np.stack(refs, axis=1)
+
+
+def cca_score(X, Y):
+    cca = CCA(n_components=1, max_iter=500)
+    cca.fit(X, Y)
+    Xc, Yc = cca.transform(X, Y)
+    return float(np.corrcoef(Xc.ravel(), Yc.ravel())[0, 1])
+
+
+def cca_predict(epoch, fs):
+    n = epoch.shape[1]
+    scores = [cca_score(epoch.T, build_template(f, n, fs)) for f in STIM_FREQS]
+    return STIM_FREQS[int(np.argmax(scores))]
+
+
+def fbcca_predict(epoch, fs, sub_bands=SUB_BANDS, a=1.25, b=0.25):
+    n = epoch.shape[1]
+    weights = np.array([(i + 1) ** -a + b for i in range(len(sub_bands))])
+    band_signals = []
+    for low, high in sub_bands:
+        b_, a_ = butter(4, [low, high], btype="band", fs=fs)
+        band_signals.append(filtfilt(b_, a_, epoch, axis=-1))
+    scores = np.zeros(len(STIM_FREQS))
+    for fi, freq in enumerate(STIM_FREQS):
+        Y = build_template(freq, n, fs)
+        for bi, sig in enumerate(band_signals):
+            scores[fi] += weights[bi] * cca_score(sig.T, Y) ** 2
+    return STIM_FREQS[int(np.argmax(scores))]
+
+
+bp, notch = make_filters(fs)
+y_filt = y.astype(float).copy()
+for ci in range(1, 9):
+    y_filt[ci] = apply_filters(y[ci], bp, notch)
+
+trials = find_trials(y)
+n_samples_full = trials[0][1] - trials[0][0]
+epochs = np.stack([y_filt[1:9, s:s + n_samples_full] for s, _, _ in trials])
+labels = np.array([fr for _, _, fr in trials])
+print(f"epochs: {epochs.shape}, full trial = {n_samples_full / fs:.2f} s")
+```
+
+## Accuracy as a function of epoch length
+
+For each candidate epoch length L, take the first L seconds of every trial and re-run the classifier. The trials are 7.36 s, so we sweep from 1 s up to 7 s in 0.5-s steps.
+
+```{python}
+WINDOW_LENGTHS = np.arange(1.0, 7.5, 0.5)
+
+
+def sweep_accuracy(epochs, labels, fs, predict_fn, lengths):
+    accs = []
+    for L in lengths:
+        n_L = int(L * fs)
+        truncated = epochs[:, :, :n_L]
+        preds = np.array([predict_fn(ep, fs) for ep in truncated])
+        accs.append((preds == labels).mean())
+    return np.array(accs)
+
+
+cca_accs = sweep_accuracy(epochs, labels, fs, cca_predict, WINDOW_LENGTHS)
+fbcca_accs = sweep_accuracy(epochs, labels, fs, fbcca_predict, WINDOW_LENGTHS)
+```
+
+```{python}
+#| label: fig-accuracy-curve
+#| fig-cap: "Per-trial accuracy as a function of epoch length, on the running session (20 trials)."
+
+fig, ax = plt.subplots(figsize=(10, 4.5))
+ax.plot(WINDOW_LENGTHS, cca_accs, "o-", label="CCA argmax", lw=1.5, color="C0")
+ax.plot(WINDOW_LENGTHS, fbcca_accs, "s-", label="FBCCA argmax", lw=1.5, color="C2")
+ax.axhline(0.25, color="C3", ls="--", alpha=0.5, label="chance (25 %)")
+ax.set_xlabel("Epoch length (s)")
+ax.set_ylabel("Accuracy")
+ax.set_ylim(0, 1.05)
+ax.set_title("Accuracy vs epoch length — running session")
+ax.legend()
+ax.grid(alpha=0.3)
+fig.tight_layout()
+fig.savefig("images/08-time-accuracy-itr_accuracy.png", dpi=200, bbox_inches="tight")
+plt.show()
+```
+
+Both curves rise from the high-50s at 1 s up to ~90–95 % at 7 s. The shape is what we'd expect: more cycles of the stimulus inside the window means a sharper template-correlation, which means cleaner discrimination. The curves are bumpy because each step is computed from only 20 trials — a single misclassification flips the line by 5 %. With more trials the curve would smooth into the classic monotone rise. The shape closely resembles `data/subject_1_fvep_led_training_1_result2d.PNG`, the analogous accuracy-vs-window plot from g.tec's analysis tool.
+
+## The Wolpaw Information Transfer Rate
+
+Accuracy answers "how often is the classifier right?" but a usable BCI also has to be *fast*. A keyboard that's 99 % accurate but takes a minute per character is worse than one that's 80 % accurate at 2 seconds. The Wolpaw ITR captures this combined "bandwidth in bits per minute":
+
+$$
+\text{ITR} = \left[\log_2 N + p \log_2 p + (1-p) \log_2 \frac{1-p}{N-1}\right] \cdot \frac{60}{T}
+$$
+
+where *N* is the number of classes, *p* is the per-trial accuracy, and *T* is the time per decision in seconds. The bracketed term is the per-trial information in bits — it's `log2(N)` (here, 2 bits) when *p* = 1, drops to 0 at chance (*p* = 1/*N*), and is undefined-but-zero in the corners. Multiplying by 60/*T* converts to bits-per-minute.
+
+```{python}
+def wolpaw_itr(p, N, T):
+    """ITR in bits/minute. p=accuracy, N=number of classes, T=time per decision (s)."""
+    p = np.asarray(p, dtype=float)
+    bits = np.zeros_like(p)
+    perfect = p >= 1.0
+    chance_or_worse = p <= 1.0 / N
+    middle = ~(perfect | chance_or_worse)
+    bits[perfect] = np.log2(N)
+    bits[middle] = (np.log2(N) + p[middle] * np.log2(p[middle])
+                    + (1 - p[middle]) * np.log2((1 - p[middle]) / (N - 1)))
+    return bits * 60.0 / T
+
+
+# Worked example
+print(f"  p = 0.95 at T = 7 s: ITR = {wolpaw_itr(np.array([0.95]), 4, 7)[0]:.1f} bits/min")
+print(f"  p = 0.65 at T = 2 s: ITR = {wolpaw_itr(np.array([0.65]), 4, 2)[0]:.1f} bits/min")
+print(f"  p = 0.50 at T = 1 s: ITR = {wolpaw_itr(np.array([0.50]), 4, 1)[0]:.1f} bits/min")
+```
+
+The 65 %-at-2 s version delivers more usable bandwidth than the 95 %-at-7 s version — even though the latter is far more accurate per decision, the 7-s wait means fewer decisions per minute. That tradeoff is the point of the metric.
+
+## ITR as a function of epoch length
+
+Apply the formula at every window length we already swept, using *T* equal to the epoch length itself (i.e., assuming negligible processing delay between epochs).
+
+```{python}
+cca_itr = wolpaw_itr(cca_accs, N=4, T=WINDOW_LENGTHS)
+fbcca_itr = wolpaw_itr(fbcca_accs, N=4, T=WINDOW_LENGTHS)
+```
+
+```{python}
+#| label: fig-itr-curve
+#| fig-cap: "Information Transfer Rate (bits/min) as a function of epoch length. The peak sits well below the accuracy plateau."
+
+fig, ax = plt.subplots(figsize=(10, 4.5))
+ax.plot(WINDOW_LENGTHS, cca_itr, "o-", label="CCA argmax", lw=1.5, color="C0")
+ax.plot(WINDOW_LENGTHS, fbcca_itr, "s-", label="FBCCA argmax", lw=1.5, color="C2")
+ax.set_xlabel("Epoch length (s)")
+ax.set_ylabel("ITR (bits/min)")
+ax.set_title("Information Transfer Rate vs epoch length")
+ax.legend()
+ax.grid(alpha=0.3)
+fig.tight_layout()
+fig.savefig("images/08-time-accuracy-itr_itr.png", dpi=200, bbox_inches="tight")
+plt.show()
+
+
+def best_point(lengths, itrs, accs, name):
+    i = int(np.argmax(itrs))
+    return f"  {name}: peak ITR = {itrs[i]:.1f} bits/min at T = {lengths[i]:.1f} s (accuracy {accs[i]:.0%})"
+
+
+print(best_point(WINDOW_LENGTHS, cca_itr, cca_accs, "CCA  "))
+print(best_point(WINDOW_LENGTHS, fbcca_itr, fbcca_accs, "FBCCA"))
+print(f"  Compare full-trial: CCA = {cca_itr[-1]:.1f} bits/min, FBCCA = {fbcca_itr[-1]:.1f} bits/min "
+      f"(at T = {WINDOW_LENGTHS[-1]:.1f} s, accuracies {cca_accs[-1]:.0%} / {fbcca_accs[-1]:.0%})")
+```
+
+The peak ITR sits at a much shorter epoch than the accuracy maximum — typically in the 2–3 s range on this session, depending on which classifier you pick and how the per-length curve happens to wobble with only 20 trials. The full-trial 7 s decisions are *more accurate* but deliver *less* usable information per minute. That's the central tradeoff: shipping a real SSVEP BCI almost always means cutting the epoch short of where the accuracy curve plateaus.
+
+## What this means for the BCI
+
+The shape of the ITR curve is universal: it rises from very-short epochs (where decisions come fast but are nearly random), peaks somewhere in the middle, and falls in the long-epoch tail (where decisions are accurate but slow). The *location* of the peak depends on the subject, the classifier, and how much per-decision overhead the system has. On this single session with ~20 trials per class the absolute numbers are noisy, but the shape comes through clearly enough to motivate two follow-ups:
+
+- **Tune to the user.** A real product would estimate this curve per-subject during a short calibration and pick the operating point. Ch 9 takes the first step toward this, looking at how much subjects vary.
+- **Measure end-to-end.** *T* in the formula is "time per decision", not just epoch length — onset detection, feature computation, network round-trip, and any required dwell-time all add. In production those overheads can shift the peak considerably; for our offline analysis they're zero.
+
+ITR is also why the SSVEP literature keeps gravitating to faster, cleaner classifiers (FBCCA, TRCA, deep variants): every percentage point of accuracy at a short epoch length translates into a meaningful bits-per-minute improvement, while the same gain at a long epoch is mostly cosmetic.

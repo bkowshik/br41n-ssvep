@@ -1,3 +1,49 @@
-# Summary
+---
+title: "Summary"
+description: "What we built across the canonical EEG pipeline, what we deliberately skipped, and where to go next."
+date-modified: 2026-04-26
+---
 
-What we built across the canonical EEG pipeline, what we deliberately skipped (subject-independent models, deep learning, cross-session transfer), and where to go next.
+## What we built
+
+A complete SSVEP-BCI pipeline, end to end, on a four-file dataset:
+
+- **Ch 1** — opened the four `.mat` files, decoded the eleven channels, and discovered that the trial-class mapping for CH11 lives in a screenshot rather than the description text.
+- **Ch 2** — saw the SSVEP as a peak in raw PSD, with a working subject (subject 1 run 1) that lets the response stand visibly above the alpha rhythm.
+- **Ch 3** — designed a 5–40 Hz bandpass + 50 Hz notch and showed honestly that on this file filtering is mostly cosmetic: it removes drift and would handle line noise if there were any, but doesn't change the in-band spectrum.
+- **Ch 4** — recovered the trial structure from CH10 transitions and built the canonical `(20, 8, 1884)` epoch tensor that every later chapter consumes.
+- **Ch 5** — sampled the PSD at the four candidate frequencies (and their second harmonics) on each of the eight channels, then converted raw power into peak-vs-neighbourhood SNR features.
+- **Ch 6** — built sine/cosine reference templates per candidate frequency and used CCA to score each epoch against them. FBCCA extended the idea across sub-bands.
+- **Ch 7** — turned features into class labels, comparing CCA argmax (no training) against LDA on the spectral features and the CH11 baseline shipped with the data. CCA cleared 90 %; FBCCA hit 95 %; LDA-on-features and CH11 tied near 55 %.
+- **Ch 8** — swept epoch length from 1 s to 7 s and showed that peak Information Transfer Rate sits at 2–3 s, well below where the accuracy curve plateaus.
+- **Ch 9** — ran the pipeline on both subjects and observed that subject 1 (the one whose CH11 baseline was broken) actually has the cleaner SSVEP for our methods — confirming both subjects fit inside the distribution reported by @guger2012.
+
+## What was actually surprising
+
+The book's a-priori plan and what the data actually showed disagreed in three places worth re-stating:
+
+1. **The shipped baseline lied about which subject was "easier".** Subject 2 run 2 was picked as the running example in Ch 1 because its CH11 LDA looked clean. Subject 1 run 1's CH11 was stuck on class 3 — the "broken" file. With our own CCA classifier the ranking inverts: subject 1 saturates at 100 % by 4 s, subject 2 reaches that only at 7 s. **Don't let the shipped baseline pick your favourite subject.**
+2. **Filtering on this dataset is mostly cosmetic, not corrective.** Butterworth filters are flat in the passband by construction, so the alpha rhythm sitting on top of 9–12 Hz stim frequencies survives filtering untouched. What handles alpha is *features that care about phase* (CCA), not preprocessing.
+3. **For SSVEP, feature engineering is the classifier.** A per-class CCA score is intrinsically class-comparable, so the "model" is just argmax. The work that distinguishes a 90 % pipeline from a 55 % one happens at the feature stage. Generic classifiers on top of generic features (LDA on amplitudes) leave most of the available structure on the table.
+
+## What we deliberately skipped
+
+This was a single-dataset, single-pipeline walkthrough. The following are out of scope but real:
+
+- **Subject-independent models** — train on one user, test on another. Possible with template-matching methods that don't need per-user calibration; needs many more subjects to evaluate.
+- **Deep learning** — EEGNet, FBCNN, transformer variants. Not obviously better than CCA on small SSVEP datasets, but the comparison would need careful regularization and a held-out test split.
+- **Cross-session transfer** — train on `training_1`, test on `training_2` of the same subject. The two runs were recorded back-to-back, so this would mostly probe within-day stability; the more interesting question (across-day stability) needs different data.
+- **Artifact rejection** — ICA, regression-based EOG correction. SSVEP is robust enough that this rarely helps; for a paradigm like P300 the same shortcut wouldn't work.
+- **Online / asynchronous BCI** — onset detection without a known trigger, idle-state rejection, dwell-time tuning. The offline accuracy and ITR numbers we reported assume an oracle stimulus onset.
+- **Population-scale claims** — anything beyond "we fit inside the published distribution" needs N ≫ 2 and pre-registered evaluation. @guger2012 with N = 53 is the right shape of study; a re-analysis of one dataset is not.
+
+## Where to go next
+
+Concrete starting points that build on this book's pipeline:
+
+- **Switch to a larger benchmark.** The Tsinghua *BETA* and *Benchmark* SSVEP datasets are open and large enough to test classifier choices, calibration regimes, and cross-subject transfer. The pipeline in this book translates directly — load, filter, epoch, score.
+- **Try TRCA.** Task-Related Component Analysis learns spatial filters per class from training data and tends to beat CCA / FBCCA when calibration data is available. A natural next chapter.
+- **Calibrated vs calibration-free.** Within the same dataset, compare CCA argmax (no calibration), TRCA (per-subject calibration), and a transfer-learning method that calibrates on others. The interesting question is whether the calibration cost is worth it for the user.
+- **Measure end-to-end ITR.** The Wolpaw formula uses *T* = epoch length here. In production, *T* includes onset detection, processing delay, network round-trip, and dwell time. A simple instrumented prototype would put real numbers on the gap between offline and online.
+
+The pipeline you have at the end of Ch 9 is enough to do any of these — just point it at different data, a different classifier function, or a different evaluation loop.

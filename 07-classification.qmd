@@ -1,14 +1,14 @@
 ---
 title: "From Features to a Class"
-description: "Turn features into per-trial class predictions. Compare CCA argmax (no training), LDA on spectral features, and the g.tec CH11 baseline."
+description: "Turn features into per-trial class predictions. Compare CCA argmax (no training), LDA on spectral features, and the CH11 baseline."
 date-modified: 2026-04-26
 ---
 
-> Take the features built in Ch 5 and Ch 6 and turn them into a class label per epoch. Compare three approaches: argmax on CCA scores (no training), LDA on spectral features (trained), and the g.tec CH11 baseline (already in the data). The goal is to make the *fusion* of feature engineering and modelling for SSVEP explicit.
+> Take the features built in Ch 5 and Ch 6 and turn them into a class label per epoch. Compare three approaches: argmax on CCA scores (no training), LDA on spectral features (trained), and the CH11 baseline (already in the data). The goal is to make the *fusion* of feature engineering and modelling for SSVEP explicit.
 
 ## Setup
 
-Same pipeline as the previous chapters, condensed. We end with three things on hand: `epochs` (the trial tensor), `labels` (the trigger truth), and `y` itself (so we can also evaluate g.tec's CH11 baseline).
+Same pipeline as the previous chapters, condensed. We end with three things on hand: `epochs` (the trial tensor), `labels` (the trigger truth), and `y` itself (so we can also evaluate the CH11 baseline).
 
 ```{python}
 from pathlib import Path
@@ -193,7 +193,7 @@ plt.show()
 
 A long way short of CCA's 90 %. With 64 features and only 19 training samples in each LOO fold, LDA is severely underdetermined — there are more features than samples, so the within-class covariance can't be estimated reliably. The model is also blind to the *phase* information that CCA captures by construction. More features and more aggressive regularization could close some of the gap, but the core issue is that a generic classifier on top of a generic feature vector throws away the structure CCA exploits for free.
 
-## The g.tec CH11 baseline
+## The CH11 baseline
 
 CH11 is the LDA-class index that g.tec's analysis tool wrote into the dataset at recording time — our shipped baseline. It fires intermittently (only when its confidence crosses a threshold), so per-trial prediction is the *mode* of the non-zero values within the trial window. The class indices map to frequencies via the parameters panel from Ch 1: `1 → 15 Hz, 2 → 12, 3 → 10, 4 → 9`.
 
@@ -216,16 +216,16 @@ def ch11_predict(y, trials):
 
 ch11_pred = ch11_predict(y, trials)
 ch11_acc = (ch11_pred == labels).mean()
-print(f"g.tec CH11 (mode of non-zero samples): {(ch11_pred == labels).sum()}/{len(labels)} = {ch11_acc:.0%}")
+print(f"CH11 (mode of non-zero samples): {(ch11_pred == labels).sum()}/{len(labels)} = {ch11_acc:.0%}")
 ```
 
 ```{python}
 #| label: fig-ch11-confusion
-#| fig-cap: "g.tec CH11 baseline — per-trial mode of non-zero samples."
+#| fig-cap: "CH11 baseline — per-trial mode of non-zero samples."
 
 fig, ax = plt.subplots(figsize=(5, 4))
 plot_confusion(confusion_matrix(labels, ch11_pred, STIM_FREQS), STIM_FREQS,
-               f"g.tec CH11 — accuracy {ch11_acc:.0%}", ax)
+               f"CH11 — accuracy {ch11_acc:.0%}", ax)
 fig.tight_layout()
 fig.savefig("images/07-classification_ch11_confusion.png", dpi=200, bbox_inches="tight")
 plt.show()
@@ -255,7 +255,7 @@ def fbcca_class_scores(epoch, fs, freqs=STIM_FREQS, sub_bands=SUB_BANDS,
 fbcca_pred = np.array([STIM_FREQS[fbcca_class_scores(ep, fs).argmax()] for ep in epochs])
 fbcca_acc = (fbcca_pred == labels).mean()
 
-methods = ["g.tec CH11", "LDA on SNR", "CCA argmax", "FBCCA argmax"]
+methods = ["CH11", "LDA on SNR", "CCA argmax", "FBCCA argmax"]
 accs = [ch11_acc, lda_acc, cca_acc, fbcca_acc]
 print({m: f"{a:.0%}" for m, a in zip(methods, accs)})
 ```
@@ -280,6 +280,6 @@ fig.savefig("images/07-classification_comparison.png", dpi=200, bbox_inches="tig
 plt.show()
 ```
 
-Two methods that *match* the structure of the SSVEP signal — CCA argmax and FBCCA argmax — clear 90 % with no training. Two methods that don't — generic LDA on amplitude features, and g.tec's pre-computed LDA — sit roughly tied in the mid-50s, only modestly above chance. The lesson is the SSVEP literature's main empirical finding: feature engineering that bakes in the physics of the response (narrowband, phase-locked, harmonic) lets a *trivial* classifier win. The "model" is the template; the argmax is a formality.
+Two methods that *match* the structure of the SSVEP signal — CCA argmax and FBCCA argmax — clear 90 % with no training. Two methods that don't — generic LDA on amplitude features, and the shipped CH11 LDA — sit roughly tied in the mid-50s, only modestly above chance. The lesson is the SSVEP literature's main empirical finding: feature engineering that bakes in the physics of the response (narrowband, phase-locked, harmonic) lets a *trivial* classifier win. The "model" is the template; the argmax is a formality.
 
 What we haven't yet asked: how short can we make the epoch and still keep these accuracies? That's Ch 8.
