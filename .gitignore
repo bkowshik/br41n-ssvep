@@ -4,3 +4,6 @@
 /.venv/
 __pycache__/
 **/*.quarto_ipynb
+/*.html
+/*_files/
+/site_libs/
