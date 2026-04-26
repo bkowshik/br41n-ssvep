@@ -1,28 +1,153 @@
-# Filtering: Bandpass and Notch
+---
+title: "Filtering: Bandpass and Notch"
+description: "Apply the small amount of preprocessing SSVEP actually needs — a bandpass over the stimulation range and a notch at line frequency — and make the case for why this is all that's required."
+date-modified: 2026-04-26
+---
 
 > Apply the small amount of preprocessing SSVEP actually needs — a bandpass over the stimulation range and a notch at line frequency — and make a deliberate argument for why this is *all* we need. SSVEP is unusually robust compared to other EEG paradigms; this chapter explains why.
 
-## Scope
+## Back to the running example
 
-- What's in: bandpass filter design, notch design, before/after PSDs, before/after time-domain plot.
-- What's deferred: epoching → Ch 4. Re-referencing experiments → out of scope (note in theory text). Artifact rejection → out of scope.
+Ch 2 borrowed `subject_1_fvep_led_training_1.mat` for visual intuition because the running file's raw spectrum was dominated by the alpha rhythm and slow drift. With filtering in scope, the running example — `subject_2_fvep_led_training_2.mat` — returns from this chapter onward. Filtering doesn't fix the alpha problem (more on that below), but it does take the drift out of the picture so the spectrum becomes readable.
 
-## Blocks
+## What the unfiltered spectrum looks like
 
-### Block 1: The unfiltered spectrum
+```{python}
+from pathlib import Path
+import numpy as np
+import scipy.io
+import matplotlib.pyplot as plt
+from scipy.signal import welch, butter, filtfilt, iirnotch, freqz
 
-- **Code:** Compute and plot the long-window PSD (e.g. ~60 s) on Oz, no filtering. Use a log-y axis.
-- **Artifact:** `images/03-filtering_raw_psd.png` — broadband PSD showing 1/f decline, a likely line-noise spike at 50 or 60 Hz, and (with eyes peeled) small bumps at the stim frequencies.
-- **Theory:** What's in raw EEG and what we need to deal with: 1/f background, line-noise pickup, motion/muscle artifacts. For SSVEP, we care about a narrow band roughly 5–40 Hz; everything outside that is either irrelevant or actively harmful.
+DATA_DIR = Path("data")
+OZ = 7
 
-### Block 2: Bandpass + notch, before and after
+mat = scipy.io.loadmat(DATA_DIR / "subject_2_fvep_led_training_2.mat")
+fs = int(mat["fs"][0, 0])
+y = mat["y"]
+oz_raw = y[OZ, fs:]  # skip the first second (amplifier startup transient)
 
-- **Code:** Design a bandpass (e.g. 5–40 Hz, 4th-order Butterworth, zero-phase via `filtfilt`) and a notch at the dominant line frequency identified in Block 1. Apply to the same 60-s window. Plot before/after PSD on the same axes.
-- **Artifact:** `images/03-filtering_filtered_psd.png` — overlaid raw and filtered PSDs showing the bandpass roll-off and the notch null.
-- **Theory:** Filter design choices: passband selection (must comfortably include 9 Hz lower bound and the highest harmonic of 15 Hz that we care about), why zero-phase, why notch instead of low-pass below 50 Hz. Mention re-referencing as something we are *not* doing here, with rationale.
+ff_raw, pxx_raw = welch(oz_raw, fs=fs, nperseg=4096)
+print(f"Frequency resolution: {ff_raw[1] - ff_raw[0]:.3f} Hz")
+print(f"Power at 0.5 Hz: {pxx_raw[np.argmin(np.abs(ff_raw - 0.5))]:.1f}")
+print(f"Power at 50 Hz : {pxx_raw[np.argmin(np.abs(ff_raw - 50))]:.4f}")
+```
 
-### Block 3: Why this is enough
+```{python}
+#| label: fig-raw-psd
+#| fig-cap: "Long-window PSD on Oz, full session, log-y axis."
+fig, ax = plt.subplots(figsize=(11, 4.5))
+ax.semilogy(ff_raw, pxx_raw, lw=1)
+for f in [9, 10, 12, 15]:
+    ax.axvline(f, color="C3", ls="--", alpha=0.3)
+ax.axvline(50, color="C1", ls="--", alpha=0.4, label="50 Hz (line)")
+ax.set_xlim(0, 80)
+ax.set_xlabel("Frequency (Hz)")
+ax.set_ylabel("Power (log)")
+ax.set_title("Oz, raw — full session")
+ax.legend()
+fig.tight_layout()
+fig.savefig("images/03-filtering_raw_psd.png", dpi=200, bbox_inches="tight")
+plt.show()
+```
 
-- **Code:** Time-domain plot of one channel, before vs after, for a stim block.
-- **Artifact:** `images/03-filtering_timedomain.png` — two-row time-series comparison, before/after.
-- **Theory:** Why SSVEP needs less preprocessing than motor-imagery or P300: the response is large, narrowband, phase-locked, and overlaps where artifacts (eye blinks <4 Hz, muscle >40 Hz) are not. Aggressive ICA-style artifact removal is overkill for this paradigm.
+Two things stand out in the raw spectrum, neither of them the SSVEP. The biggest peak is at 0.5 Hz — slow baseline drift, amplified by the 1/f power law that EEG follows. Above ~40 Hz the spectrum drops off into the noise floor; the 50 Hz line-frequency spike that's typically conspicuous in raw EEG isn't there at all (power ≈ 0). The g.tec amplifier almost certainly applied its own front-end filtering before writing the file — convenient, but we'll still design a notch for the same reason cars have seatbelts. The four stimulation frequencies (red dashes) sit inside the alpha band and are barely distinguishable from the background.
+
+## Designing the filter
+
+```{python}
+def make_filters(fs, low=5.0, high=40.0, line=50.0, order=4, notch_q=30):
+    bp_b, bp_a = butter(order, [low, high], btype="band", fs=fs)
+    n_b, n_a = iirnotch(line, notch_q, fs=fs)
+    return (bp_b, bp_a), (n_b, n_a)
+
+
+def apply_filters(x, bp, notch):
+    x = filtfilt(*bp, x)
+    x = filtfilt(*notch, x)
+    return x
+
+
+bp, notch = make_filters(fs)
+oz_filt = apply_filters(oz_raw, bp, notch)
+```
+
+```{python}
+#| label: fig-filter-response
+#| fig-cap: "Combined bandpass (5–40 Hz, 4th-order Butterworth) and notch (50 Hz) frequency response."
+w_bp, h_bp = freqz(*bp, fs=fs, worN=4096)
+w_n, h_n = freqz(*notch, fs=fs, worN=4096)
+combined_db = 20 * np.log10(np.abs(h_bp * h_n) + 1e-12)
+
+fig, ax = plt.subplots(figsize=(11, 4))
+ax.plot(w_bp, combined_db, lw=1.2)
+for f in [9, 10, 12, 15]:
+    ax.axvline(f, color="C3", ls="--", alpha=0.3)
+ax.axvline(50, color="C1", ls="--", alpha=0.4)
+ax.axhline(-3, color="gray", ls=":", alpha=0.5, label="−3 dB")
+ax.set_xlim(0, 80)
+ax.set_ylim(-60, 5)
+ax.set_xlabel("Frequency (Hz)")
+ax.set_ylabel("Gain (dB)")
+ax.set_title("Bandpass + notch — combined response")
+ax.legend()
+fig.tight_layout()
+fig.savefig("images/03-filtering_response.png", dpi=200, bbox_inches="tight")
+plt.show()
+```
+
+Notice how clean this curve is compared to the raw PSD above — no jitter, no hairy line. That's because this isn't an estimate from data; `freqz` evaluates the filter's transfer function analytically from its coefficients, so there's no variance to average down. It's what the filter does *by construction*, not what we measured.
+
+The passband at 5–40 Hz comfortably covers the four fundamentals (9, 10, 12, 15 Hz) and the second harmonics of the lower three (18, 20, 24 Hz) — the harmonic of 15 Hz at 30 Hz also gets through. We use `filtfilt` for zero phase (forward + reverse pass) so the SSVEP's phase relative to the stimulus isn't smeared, and a 4th-order Butterworth so the passband is flat (no ripple riding on top of the SSVEP peaks). The 50 Hz notch is narrow (Q = 30) — defensive even though there's nothing there to remove on this file.
+
+## Before and after — spectrum
+
+```{python}
+#| label: fig-bef-aft-psd
+#| fig-cap: "Oz PSD, raw vs filtered, full session, log-y."
+ff_filt, pxx_filt = welch(oz_filt, fs=fs, nperseg=4096)
+
+fig, ax = plt.subplots(figsize=(11, 4.5))
+ax.semilogy(ff_raw, pxx_raw, lw=1, alpha=0.5, label="raw")
+ax.semilogy(ff_filt, pxx_filt, lw=1, label="filtered")
+for f in [9, 10, 12, 15]:
+    ax.axvline(f, color="C3", ls="--", alpha=0.3)
+ax.set_xlim(0, 80)
+ax.set_xlabel("Frequency (Hz)")
+ax.set_ylabel("Power (log)")
+ax.set_title("Oz — raw vs filtered")
+ax.legend()
+fig.tight_layout()
+fig.savefig("images/03-filtering_bef_aft_psd.png", dpi=200, bbox_inches="tight")
+plt.show()
+```
+
+The drift below ~3 Hz drops by orders of magnitude; everything above ~45 Hz drops into numerical noise; in between the two spectra are the same. This is what filtering does — and *only* what filtering does. **Inside the passband the per-sample values are unchanged by Butterworth filtering** (its passband is flat by construction), so the alpha rhythm at ~10 Hz is still right where it was, the SSVEP peaks are still where they were, and the SNR between them is identical. Filtering makes the spectrum *readable*; it doesn't change what's in the analysis band.
+
+## Before and after — time domain
+
+```{python}
+#| label: fig-bef-aft-time
+#| fig-cap: "Same 8-second window of Oz, raw vs filtered."
+window_s, window_e = 30 * fs, 38 * fs
+t = np.arange(window_s, window_e) / fs
+
+fig, axes = plt.subplots(2, 1, figsize=(12, 5), sharex=True)
+axes[0].plot(t, y[OZ, window_s:window_e], lw=0.6)
+axes[0].set_ylabel("raw  (µV)")
+axes[0].set_title("Oz — raw vs filtered")
+axes[1].plot(t, oz_filt[window_s - fs : window_e - fs], lw=0.6, color="C1")
+axes[1].set_ylabel("filtered  (µV)")
+axes[1].set_xlabel("Time (s)")
+fig.tight_layout()
+fig.savefig("images/03-filtering_bef_aft_time.png", dpi=200, bbox_inches="tight")
+plt.show()
+```
+
+The raw trace wanders around a slowly-shifting baseline (that's the 0.5 Hz drift); the filtered trace sits cleanly around zero. The fast oscillations — the part that actually carries the SSVEP — look effectively identical. Removing the drift matters most for time-domain features (per-trial means and amplitudes) and for any feature that's sensitive to absolute level; for spectral features it's almost cosmetic.
+
+## Why this is enough — and what it doesn't fix
+
+Compared to motor-imagery or P300 paradigms, SSVEP needs almost no preprocessing. The response is generated in a small, well-localized region of cortex (V1/V2), it's narrowband and phase-locked to the stimulus, and the band it lives in (~9–30 Hz including harmonics) doesn't overlap with the worst contaminants — eye blinks live below 4 Hz and muscle activity above 40 Hz, both safely outside the passband. Heavy artifact removal (ICA, regression-based EOG correction, full re-referencing pipelines) is overkill here and risks subtracting out signal you wanted to keep.
+
+What filtering on this file *doesn't* fix is the alpha rhythm sitting on top of the lower stim frequencies (9, 10, 12 Hz) — that's a within-passband collision and no linear filter will untangle it. The remaining chapters use two complementary tools to handle it: trial-averaging in Ch 4 (which beats down anything not phase-locked to the stimulus) and the right *features* in Ch 5 (CCA against sine/cosine references at the stim frequencies, which is sensitive to phase, not just power, and so cuts through alpha cleanly).
