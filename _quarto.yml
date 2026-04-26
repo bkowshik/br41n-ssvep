@@ -1,0 +1,22 @@
+project:
+  type: book
+
+book:
+  title: "br41n.io - SSVEP Data Analysis"
+  author: "Bhargav Kowshik"
+  date: "2026-04-26"
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - summary.qmd
+    - references.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme:
+      - cosmo
+      - brand
+  pdf:
+    documentclass: scrreprt
