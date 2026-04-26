@@ -1,0 +1,22 @@
+# The Recordings
+
+> Open one of the four `.mat` files, walk through the 11 channels, and explain what each one carries. By the end, the reader can load any session in this dataset and explain what every column means.
+
+## Scope
+
+- What's in: file structure, channel meanings (CH1 sample time, CH2–9 EEG, CH10 trigger, CH11 g.tec LDA output), sampling rate.
+- What's deferred: trial epoching from CH10 → Ch 4 (Epoching). Spectral content of EEG channels → Ch 2.
+
+## Blocks
+
+### Block 1: What's inside a `.mat` file
+
+- **Code:** Load `data/subject_1_fvep_led_training_1.mat` with `scipy.io.loadmat`. Print top-level keys and the shape/dtype of the main data array. Plot all 11 channels stacked (shared x-axis) for the first ~30 s.
+- **Artifact:** `images/01-recordings_channels.png` — 11-row stacked plot. Reader should see CH1 as a linear ramp (sample time), CH2–9 as oscillating EEG, CH10 as a step function between {9, 10, 12, 15, 0}, and CH11 as a step function tracking CH10 with some lag/error.
+- **Theory:** The 11-channel layout from `data_description.txt`. Why CH1 is sample time (not a recorded signal). Why CH10 encodes the active stimulation frequency. Why CH11 is g.tec's pre-computed LDA output — our baseline competitor for everything that follows.
+
+### Block 2: A closer look at CH10 and CH11
+
+- **Code:** Plot only CH10 and CH11 over a longer window (e.g. one full session). Compute the per-sample agreement rate between CH10 (ground truth) and CH11 (g.tec's guess).
+- **Artifact:** `images/01-recordings_trigger_vs_lda.png` — two-row plot, trigger on top, LDA prediction below, with shaded regions where they agree.
+- **Theory:** What "agreement" means here and why CH11 lags / errs at trial boundaries. This sets the bar: any classifier we build later should match or beat the agreement rate visible in this figure.

@@ -1,0 +1,22 @@
+# Template Features: CCA and FBCCA
+
+> A different way to score epochs against candidate frequencies: instead of reading bins from a spectrum, build sine/cosine reference templates at each candidate frequency and ask "how well does this epoch correlate with this template?" CCA finds the optimal channel mixture that maximizes that correlation, and FBCCA extends it across frequency sub-bands.
+
+## Scope
+
+- What's in: synthetic sine/cosine template construction, CCA scoring per class, filter-bank extension.
+- What's deferred: turning these scores into a class label → Ch 7. Cross-subject training → out of scope.
+
+## Blocks
+
+### Block 1: Reference templates and CCA
+
+- **Code:** For each of the 4 candidate frequencies *f*, build a reference matrix `Y_f` containing `[sin(2π f t), cos(2π f t), sin(4π f t), cos(4π f t)]` (first two harmonics) sampled at 256 Hz over the epoch length. For one epoch, compute CCA between the 8-channel EEG `X` and each of the four `Y_f`. Take the largest canonical correlation per *f* → 4 scores. Plot the four scores as a bar chart, with the true class highlighted.
+- **Artifact:** `images/06-template-features_cca_scores.png` — 4-bar chart of per-class CCA scores for one trial, true class highlighted.
+- **Theory:** What CCA does in plain words: finds the linear combination of EEG channels and the linear combination of reference signals that are maximally correlated. Why this matches SSVEP: the response is linear and narrowband; the template captures the narrowband part exactly. Why we include harmonics in the template.
+
+### Block 2: Filter-bank CCA
+
+- **Code:** Split the EEG into multiple sub-bands (e.g. 6–14, 14–22, 22–30, 30–40 Hz) using bandpass filters. Compute CCA per sub-band per class. Combine sub-band scores into a single per-class score using a weighted sum (e.g. weight ∝ band index^-α, the standard FBCCA weighting). Compare CCA vs FBCCA scores side-by-side for one trial.
+- **Artifact:** `images/06-template-features_fbcca.png` — grouped bar chart, one group per class, comparing plain CCA vs FBCCA scores.
+- **Theory:** Why splitting into bands helps: each band isolates one harmonic family, so the per-band CCA picks up that harmonic's signal cleanly without being washed out by the others. The filter-bank weighting acknowledges that lower-order harmonics carry more SSVEP energy.

@@ -1,0 +1,22 @@
+# Time, Accuracy, and Information Transfer Rate
+
+> Quantify the dataset's central tradeoff: longer epochs give more reliable classification but slower BCI response. Replicate the framing of g.tec's `result2d.PNG`, then convert raw accuracy into Information Transfer Rate (ITR) — the metric that actually matters for a brain–computer interface.
+
+## Scope
+
+- What's in: accuracy-vs-window-length sweep, the Wolpaw ITR formula, ITR vs window length, the location of the ITR maximum.
+- What's deferred: per-subject differences → Ch 9. Online / asynchronous BCI considerations → out of scope.
+
+## Blocks
+
+### Block 1: Accuracy as a function of epoch length
+
+- **Code:** For one subject, sweep epoch lengths from 1 s to 10 s in 0.5-s steps. At each length, re-epoch the data, run the best classifier from Ch 7, and compute total accuracy. Plot accuracy vs window length.
+- **Artifact:** `images/08-time-accuracy-itr_accuracy.png` — accuracy curve from 1 s to 10 s. Compare visually with `data/subject_1_fvep_led_training_1_result2d.PNG` from g.tec.
+- **Theory:** Why accuracy improves with epoch length: more cycles of the stimulus → finer frequency resolution → cleaner CCA / PSD features → better separation. The expected "knee" around 5–6 s where additional time yields diminishing returns.
+
+### Block 2: From accuracy to Information Transfer Rate
+
+- **Code:** Apply the Wolpaw ITR formula: `ITR = (log2(N) + p*log2(p) + (1-p)*log2((1-p)/(N-1))) * (60 / T)` where N = 4 classes, p = accuracy, T = epoch length in seconds. Compute ITR at each window length from Block 1. Plot ITR (bits/min) vs window length on the same x-axis.
+- **Artifact:** `images/08-time-accuracy-itr_itr.png` — ITR curve, ideally with a clear maximum somewhere short of where accuracy plateaus.
+- **Theory:** What ITR measures and why it's the right metric for a BCI: bits-per-minute combines accuracy with speed. Worked example: 99% accuracy at 10 s vs 85% at 2 s — show that the latter delivers more usable bandwidth despite lower per-decision accuracy. Why BCI papers report ITR rather than accuracy alone.

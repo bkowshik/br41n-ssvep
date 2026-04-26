@@ -1,0 +1,28 @@
+# Where the SSVEP Lives
+
+> Develop a visual intuition for the SSVEP response — first as a pattern across electrodes, then as a peak in the spectrum, then as four distinguishable peaks across the four stimulation classes. Purely exploratory: no preprocessing, no features, no classifier yet.
+
+## Scope
+
+- What's in: raw-signal viewing during stimulation, single-trial PSD on the strongest occipital channel, 4-class PSD overlay.
+- What's deferred: filtering → Ch 3. Turning PSD into features → Ch 5. Comparing classes quantitatively → Ch 7.
+
+## Blocks
+
+### Block 1: The signal across the 8 occipital electrodes
+
+- **Code:** Pick one stimulation block (any class) of, say, 5 s. Plot CH2–9 stacked over that interval. Inset or sidebar: the `data/montage.png` thumbnail showing the 8 electrode locations.
+- **Artifact:** `images/02-ssvep-signature_channels.png` — 8-row time-domain plot during stimulation, with the montage inset.
+- **Theory:** All 8 sites (PO7, PO3, POz, PO4, PO8, O1, Oz, O2) cluster over visual cortex (V1/V2). SSVEP is generated there because that's where flicker-driven oscillations originate. The montage is purpose-built for SSVEP, not a generic EEG cap.
+
+### Block 2: Seeing the peak — Welch PSD on Oz
+
+- **Code:** Take a single trial from one class (e.g. 15 Hz) on channel Oz. Compute Welch PSD. Plot, marking vertical lines at *f* and 2*f*.
+- **Artifact:** `images/02-ssvep-signature_psd.png` — single PSD curve with stimulation frequency and its second harmonic marked.
+- **Theory:** SSVEP is a phase-locked, narrowband response to a periodic visual stimulus. It manifests as sharp peaks at the stimulation frequency *f* and its harmonics (2*f*, 3*f*, …). Without this peak, the BCI has nothing to classify.
+
+### Block 3: Four classes, four peaks
+
+- **Code:** For one subject, average PSDs (on Oz) across trials within each class. Overlay all four classes on a single plot with the four stim frequencies marked.
+- **Artifact:** `images/02-ssvep-signature_classes.png` — four PSD curves, one per class, with 9, 10, 12, 15 Hz marked.
+- **Theory:** Why these four frequencies were chosen: harmonic non-overlap between classes (no two classes share a low-order harmonic), 10 Hz brushing the alpha band as a confound to be aware of, and Nyquist headroom (sampling at 256 Hz, 4× the highest stim freq).

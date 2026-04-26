@@ -1,0 +1,28 @@
+# Filtering: Bandpass and Notch
+
+> Apply the small amount of preprocessing SSVEP actually needs — a bandpass over the stimulation range and a notch at line frequency — and make a deliberate argument for why this is *all* we need. SSVEP is unusually robust compared to other EEG paradigms; this chapter explains why.
+
+## Scope
+
+- What's in: bandpass filter design, notch design, before/after PSDs, before/after time-domain plot.
+- What's deferred: epoching → Ch 4. Re-referencing experiments → out of scope (note in theory text). Artifact rejection → out of scope.
+
+## Blocks
+
+### Block 1: The unfiltered spectrum
+
+- **Code:** Compute and plot the long-window PSD (e.g. ~60 s) on Oz, no filtering. Use a log-y axis.
+- **Artifact:** `images/03-filtering_raw_psd.png` — broadband PSD showing 1/f decline, a likely line-noise spike at 50 or 60 Hz, and (with eyes peeled) small bumps at the stim frequencies.
+- **Theory:** What's in raw EEG and what we need to deal with: 1/f background, line-noise pickup, motion/muscle artifacts. For SSVEP, we care about a narrow band roughly 5–40 Hz; everything outside that is either irrelevant or actively harmful.
+
+### Block 2: Bandpass + notch, before and after
+
+- **Code:** Design a bandpass (e.g. 5–40 Hz, 4th-order Butterworth, zero-phase via `filtfilt`) and a notch at the dominant line frequency identified in Block 1. Apply to the same 60-s window. Plot before/after PSD on the same axes.
+- **Artifact:** `images/03-filtering_filtered_psd.png` — overlaid raw and filtered PSDs showing the bandpass roll-off and the notch null.
+- **Theory:** Filter design choices: passband selection (must comfortably include 9 Hz lower bound and the highest harmonic of 15 Hz that we care about), why zero-phase, why notch instead of low-pass below 50 Hz. Mention re-referencing as something we are *not* doing here, with rationale.
+
+### Block 3: Why this is enough
+
+- **Code:** Time-domain plot of one channel, before vs after, for a stim block.
+- **Artifact:** `images/03-filtering_timedomain.png` — two-row time-series comparison, before/after.
+- **Theory:** Why SSVEP needs less preprocessing than motor-imagery or P300: the response is large, narrowband, phase-locked, and overlaps where artifacts (eye blinks <4 Hz, muscle >40 Hz) are not. Aggressive ICA-style artifact removal is overkill for this paradigm.

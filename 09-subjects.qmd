@@ -1,0 +1,22 @@
+# People Are Different
+
+> Run the full pipeline on both subjects and compare the results. With N = 2 we cannot draw population conclusions, but we can illustrate the well-documented BCI-illiteracy phenomenon and tie our observations to the literature (Volosyak et al.).
+
+## Scope
+
+- What's in: subject-by-subject ITR curves, comparison of peak ITR and the window length at which it occurs, comparison against the population statistics in the Volosyak paper.
+- What's deferred: cross-subject generalization (training on one, testing on another) → out of scope. Within-subject session-to-session variability → mention briefly using both training_1 and training_2 if time allows.
+
+## Blocks
+
+### Block 1: Accuracy and ITR side-by-side
+
+- **Code:** Re-run the Ch 8 pipeline for both subjects. Plot subject 1 vs subject 2 on the same axes for both accuracy-vs-window and ITR-vs-window.
+- **Artifact:** `images/09-subjects_comparison.png` — two-panel figure, accuracy on the left, ITR on the right, both subjects overlaid.
+- **Theory:** Read off the figure: differences in peak ITR, differences in the window at which performance saturates, differences in maximum achievable accuracy. Avoid drawing strong conclusions — N = 2 is anecdote, not evidence.
+
+### Block 2: Tying it to the literature
+
+- **Code:** No code in this block — a small results table summarizing peak ITR and best accuracy per subject, alongside reference numbers from the Volosyak paper.
+- **Artifact:** A simple Markdown table (no figure required).
+- **Theory:** Summarize the Volosyak paper's main finding: a non-trivial fraction of the population (often quoted as ~10–25%) cannot drive an SSVEP-BCI to useful performance levels — "BCI illiteracy." What the population variability means for product design (calibration, fallback paradigms) and for honest reporting in BCI research. Close with what we *would* need to test the BCI-illiteracy claim properly: many more subjects, standardized recording, pre-registered evaluation.

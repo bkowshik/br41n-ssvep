@@ -1,3 +1,3 @@
 # Summary
 
-In summary, this book has no content whatsoever.
+What we built across the canonical EEG pipeline, what we deliberately skipped (subject-independent models, deep learning, cross-session transfer), and where to go next.

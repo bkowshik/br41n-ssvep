@@ -1,0 +1,28 @@
+# Epoching: Recovering Trials from Triggers
+
+> The trial structure isn't documented anywhere in the dataset. Reconstruct it from CH10, decide on epoch boundaries, and produce a tidy `(trials × channels × time)` array that every later chapter will consume.
+
+## Scope
+
+- What's in: trigger-channel parsing, trial onset/offset detection, per-class trial counts, epoch construction, choice of epoch length.
+- What's deferred: feature extraction → Ch 5. Artifact-based trial rejection → out of scope (mention as a limitation).
+
+## Blocks
+
+### Block 1: The trigger over time
+
+- **Code:** Plot CH10 across the entire session (one subject, one run). No processing — just the raw step function.
+- **Artifact:** `images/04-epoching_trigger_timeline.png` — full-session view of CH10 showing alternating stim blocks and rest periods.
+- **Theory:** Trial structure is *not* in `data_description.txt`. We have to recover it forensically. The CH10 values tell us *which* class is active at each sample; the transitions tell us *when* trials begin and end.
+
+### Block 2: From transitions to trial counts
+
+- **Code:** Detect rising and falling edges on CH10 (transitions to/from 0). Convert to lists of (onset_sample, offset_sample, class) tuples. Bar-chart the trial count per class.
+- **Artifact:** `images/04-epoching_trial_counts.png` — bar chart of trials per class for one session, with totals annotated.
+- **Theory:** Why class balance matters for the classifier we'll build later (avoid biased priors). Note the original g.tec filename contains "3s_window" — cross-check with our measured trial durations.
+
+### Block 3: Building the epoch tensor
+
+- **Code:** For each detected trial, extract the EEG (CH2–9) over a fixed-length window starting at the trigger onset. Stack into a `(n_trials, 8, n_samples)` array. Plot one example epoch (one trial, all 8 channels).
+- **Artifact:** `images/04-epoching_example_epoch.png` — single epoch, 8 channels, with the stim-onset marker.
+- **Theory:** The epoch-length tradeoff: too short → not enough cycles for a stable spectral estimate; too long → can't react quickly as a BCI (foreshadows Ch 8). Why we align to stimulus onset and what gets thrown out at the boundaries.

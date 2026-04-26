@@ -1,0 +1,28 @@
+# Spectral Features
+
+> Turn each epoch into a feature vector a classifier can use. The most direct route for SSVEP: compute a PSD per epoch, sample the amplitude at each candidate stim frequency and its harmonics, and stack those into a feature row.
+
+## Scope
+
+- What's in: PSD per epoch, feature sampling at candidate frequencies, building a `(trials × features)` matrix, visual sanity check of separability.
+- What's deferred: template-based features (CCA / FBCCA) → Ch 6. Actually classifying with these features → Ch 7.
+
+## Blocks
+
+### Block 1: From an epoch to a feature vector
+
+- **Code:** Take one epoch (already filtered and epoched from Ch 3 + 4). Compute Welch PSD on each of the 8 channels. For each of the 4 stim frequencies × {f, 2f}, read the PSD amplitude. Concatenate across channels → one feature vector. Plot the per-channel PSD with the sampled bins highlighted.
+- **Artifact:** `images/05-spectral-features_one_trial.png` — multi-panel (one per channel) PSDs with the 8 sampled frequency bins (4 stim × 2 harmonics) marked.
+- **Theory:** Why sample at expected frequencies rather than feed the whole spectrum: dimensionality, prior knowledge of the physics, robustness to inter-trial variability. Why include harmonics: they carry independent SNR.
+
+### Block 2: The feature matrix for a whole session
+
+- **Code:** Repeat Block 1 across all trials in one session → `(n_trials, 8 × 4 × 2)` matrix. Visualize as a heatmap with rows ordered by class and a class-color sidebar.
+- **Artifact:** `images/05-spectral-features_matrix.png` — heatmap with visible diagonal-ish blocks: trials of class *c* light up in the columns corresponding to *f_c* and 2*f_c*.
+- **Theory:** What separability looks like *before* a classifier sees the data. If the human eye can pick out class structure in this matrix, a linear model will too.
+
+### Block 3 (optional): SNR features
+
+- **Code:** Replace raw PSD amplitude with an SNR ratio: amplitude at the target bin divided by mean amplitude in adjacent bins (±0.5 Hz, excluding the bin itself). Re-plot the matrix.
+- **Artifact:** `images/05-spectral-features_snr_matrix.png` — same layout as Block 2, expected to show cleaner contrast.
+- **Theory:** Why SNR features beat raw amplitude: they normalize away the per-trial level (1/f tilt, attention effects), letting the classifier focus on relative power at the stim frequency.

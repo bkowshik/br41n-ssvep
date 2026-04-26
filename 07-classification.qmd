@@ -1,0 +1,28 @@
+# From Features to a Class
+
+> Take the features built in Ch 5 and Ch 6 and turn them into a class label per epoch. Compare three approaches: argmax on CCA scores (no training), LDA on spectral features (trained), and the g.tec CH11 baseline (already in the data). The goal is to make the *fusion* of feature engineering and modelling for SSVEP explicit.
+
+## Scope
+
+- What's in: argmax-on-CCA, LDA-on-spectral-features, comparison against CH11 baseline, confusion matrices.
+- What's deferred: how performance changes with epoch length → Ch 8. Subject-level differences → Ch 9.
+
+## Blocks
+
+### Block 1: Argmax on CCA scores
+
+- **Code:** For each epoch in one session, compute the 4 CCA scores from Ch 6 and predict the class with the highest score. No training step. Build the confusion matrix against the trigger labels (CH10).
+- **Artifact:** `images/07-classification_argmax.png` — 4×4 confusion matrix with row-normalized percentages.
+- **Theory:** Why argmax works without training: the four CCA scores are *intrinsically class-comparable* — each measures correlation against a known reference. This is what we mean when we say "for SSVEP, feature engineering and modelling fuse." There is no separate classifier; the feature extractor *is* the classifier.
+
+### Block 2: LDA on spectral features
+
+- **Code:** Use the spectral feature matrix from Ch 5. Train an LDA classifier with leave-one-trial-out cross-validation on one session. Build the confusion matrix from the held-out predictions.
+- **Artifact:** `images/07-classification_lda.png` — 4×4 confusion matrix.
+- **Theory:** Why LDA is needed here but not in Block 1: spectral features (raw amplitudes) aren't class-comparable on their own — class 1's "amplitude at 9 Hz" feature isn't directly comparable to class 2's "amplitude at 10 Hz" feature; they live in different units of variability. A classifier learns that mapping. Note: this is the family of method g.tec used to produce CH11.
+
+### Block 3: Three-way comparison
+
+- **Code:** On the same session, compute overall accuracy for: argmax-on-CCA (Block 1), LDA-on-spectral (Block 2), and CH11 (g.tec's baseline, evaluated against CH10). Report all three side-by-side as a bar chart.
+- **Artifact:** `images/07-classification_comparison.png` — three-bar accuracy comparison.
+- **Theory:** The lesson: methods that match the structure of the signal (CCA, designed for narrowband responses) often beat generic classifiers on top of generic features. This is the SSVEP literature's main empirical finding and motivates the field's preference for CCA-family methods.

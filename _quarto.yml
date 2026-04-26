@@ -7,8 +7,27 @@ book:
   date: "2026-04-26"
   chapters:
     - index.qmd
-    - intro.qmd
+    - part: "Data"
+      chapters:
+        - 01-recordings.qmd
+        - 02-ssvep-signature.qmd
+    - part: "Preprocessing"
+      chapters:
+        - 03-filtering.qmd
+        - 04-epoching.qmd
+    - part: "Feature Engineering"
+      chapters:
+        - 05-spectral-features.qmd
+        - 06-template-features.qmd
+    - part: "Modelling"
+      chapters:
+        - 07-classification.qmd
+    - part: "Evaluation"
+      chapters:
+        - 08-time-accuracy-itr.qmd
+        - 09-subjects.qmd
     - summary.qmd
+  appendices:
     - references.qmd
 
 bibliography: references.bib

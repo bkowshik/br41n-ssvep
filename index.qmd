@@ -1,5 +1,3 @@
 # Preface {.unnumbered}
 
-This is a Quarto book.
-
-To learn more about Quarto books visit <https://quarto.org/docs/books>.
+A code-first walkthrough of the br41n.io SSVEP dataset — from raw recordings to a working brain–computer interface, structured around the canonical EEG pipeline: data, preprocessing, feature engineering, modelling, evaluation.
