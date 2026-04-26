@@ -1,0 +1,608 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "br41n.io - SSVEP Data Analysis",
+    "section": "",
+    "text": "About this book\nA code-first walkthrough of the br41n.io SSVEP dataset, structured around the canonical EEG analysis pipeline: data → preprocessing → feature engineering → modelling → evaluation. Every chapter follows the same shape — runnable code, a generated artifact, then the theory that explains what the artifact shows.",
+    "crumbs": [
+      "About this book"
+    ]
+  },
+  {
+    "objectID": "index.html#what-is-ssvep",
+    "href": "index.html#what-is-ssvep",
+    "title": "br41n.io - SSVEP Data Analysis",
+    "section": "What is SSVEP?",
+    "text": "What is SSVEP?\nSteady-State Visual Evoked Potentials. When someone stares at a light flickering at frequency f, their visual cortex produces an EEG response that oscillates at the same frequency. By flickering several lights at distinguishable frequencies and reading the EEG, a brain–computer interface can tell which light the person is looking at — and use that as an input signal.",
+    "crumbs": [
+      "About this book"
+    ]
+  },
+  {
+    "objectID": "index.html#whats-in-the-dataset",
+    "href": "index.html#whats-in-the-dataset",
+    "title": "br41n.io - SSVEP Data Analysis",
+    "section": "What’s in the dataset",
+    "text": "What’s in the dataset\n\n2 subjects, 2 training sessions each — four .mat recordings in data/.\n8 EEG channels clustered over visual cortex (PO7, PO3, POz, PO4, PO8, O1, Oz, O2), sampled at 256 Hz.\n4 stimulation frequencies: 9, 10, 12, 15 Hz, delivered by an LED array (fVEP-LED).\nA trigger channel marking which frequency is active, and a pre-computed LDA prediction from g.tec’s pipeline that we use as a baseline.",
+    "crumbs": [
+      "About this book"
+    ]
+  },
+  {
+    "objectID": "index.html#how-the-book-is-structured",
+    "href": "index.html#how-the-book-is-structured",
+    "title": "br41n.io - SSVEP Data Analysis",
+    "section": "How the book is structured",
+    "text": "How the book is structured\n\n\n\n\n\n\n\nPart\nChapters\n\n\n\n\nData\nWhat’s in the recordings, where the SSVEP shows up\n\n\nPreprocessing\nFiltering, epoching from triggers\n\n\nFeature Engineering\nSpectral features, CCA / FBCCA template features\n\n\nModelling\nTurning features into a class label\n\n\nEvaluation\nTime vs. accuracy, ITR, inter-subject variability",
+    "crumbs": [
+      "About this book"
+    ]
+  },
+  {
+    "objectID": "index.html#how-to-read-it",
+    "href": "index.html#how-to-read-it",
+    "title": "br41n.io - SSVEP Data Analysis",
+    "section": "How to read it",
+    "text": "How to read it\nEach chapter is one or more code → artifact → theory blocks. The code is meant to be run; the artifacts are regenerated from the code (and live in images/ prefixed by the chapter filename); the theory after each artifact explains what just happened and why it matters.",
+    "crumbs": [
+      "About this book"
+    ]
+  },
+  {
+    "objectID": "01-recordings.html",
+    "href": "01-recordings.html",
+    "title": "1  The Recordings",
+    "section": "",
+    "text": "1.1 What’s inside a .mat file\nTwo top-level fields in every session: fs (the sampling rate) and y (the data, channels × time). Eleven channels at 256 Hz, recording about three and a half minutes per session — matching the four-minute runs reported in Guger et al. (2012).\nWhat each row carries:\nOne thing that isn’t in data_description.txt: CH11’s non-zero values are small integers — class indices, not frequencies. The class-to-frequency mapping comes from data/subject_1_fvep_led_training_1_result2d.PNG, which shows the g.tec analysis tool with the four classes laid out as 1 → 15 Hz, 2 → 12, 3 → 10, 4 → 9 (highest class index → lowest frequency). Always audit every file the organizers shipped, not just the obvious-looking text one.",
+    "crumbs": [
+      "Data",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>The Recordings</span>"
+    ]
+  },
+  {
+    "objectID": "01-recordings.html#whats-inside-a-.mat-file",
+    "href": "01-recordings.html#whats-inside-a-.mat-file",
+    "title": "1  The Recordings",
+    "section": "",
+    "text": "CH1 is a linear ramp — the sample-time index, not a recorded signal.\nCH2–CH9 are the eight occipital EEG channels (PO7, PO3, POz, PO4, PO8, O1, Oz, O2).\nCH10 sits at zero between trials and steps to one of {9, 10, 12, 15} during stimulation, encoding the active LED frequency in Hz.\nCH11 is g.tec’s LDA prediction — our baseline competitor for everything that follows.",
+    "crumbs": [
+      "Data",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>The Recordings</span>"
+    ]
+  },
+  {
+    "objectID": "01-recordings.html#the-four-recordings",
+    "href": "01-recordings.html#the-four-recordings",
+    "title": "1  The Recordings",
+    "section": "1.2 The four recordings",
+    "text": "1.2 The four recordings\nThe dataset only ships four files, so we’ll plot all of them. EEG panels are clipped to ±50 µV (clinical-EEG display convention); the amplifier-startup transient at t = 0 is left visible as a truncated spike.\nCH11 also fires intermittently — it only outputs a class when the LDA’s confidence (presumably) crosses a threshold, so per-sample agreement against CH10 isn’t the right way to evaluate the baseline. That needs trial-level evaluation, deferred to Ch 7.\n\nfrom pathlib import Path\nimport numpy as np\nimport scipy.io\nimport matplotlib.pyplot as plt\n\nDATA_DIR = Path(\"data\")\n\nLABELS = [\n    \"CH1: sample time\",\n    \"CH2: PO7\", \"CH3: PO3\", \"CH4: POz\", \"CH5: PO4\",\n    \"CH6: PO8\", \"CH7: O1\",  \"CH8: Oz\",  \"CH9: O2\",\n    \"CH10: trigger (Hz)\",\n    \"CH11: g.tec LDA\",\n]\n\ndef plot_session(path):\n    mat = scipy.io.loadmat(path)\n    fs = int(mat[\"fs\"][0, 0])\n    y = mat[\"y\"]\n    n_channels, n_samples = y.shape\n    t = np.arange(n_samples) / fs\n\n    print(f\"File:          {path.name}\")\n    print(f\"Sampling rate: {fs} Hz\")\n    print(f\"Shape:         {y.shape}  ({n_channels} channels × {n_samples} samples)\")\n    print(f\"Duration:      {n_samples / fs:.1f} s\")\n\n    fig, axes = plt.subplots(11, 1, figsize=(14, 11), sharex=True)\n    for i, ax in enumerate(axes):\n        ax.plot(t, y[i, :], lw=0.4)\n        ax.set_ylabel(LABELS[i], fontsize=8, rotation=0, ha=\"right\", va=\"center\")\n        ax.tick_params(labelsize=7)\n        if 1 &lt;= i &lt;= 8:\n            ax.set_ylim(-50, 50)\n    axes[-1].set_xlabel(\"Time (s)\")\n    fig.suptitle(path.name, fontsize=10)\n    fig.tight_layout()\n    fig.savefig(f\"images/01-recordings_{path.stem}.png\", dpi=200, bbox_inches=\"tight\")\n    plt.show()\n\n\n1.2.1 Subject 1 x Run 1\n\nplot_session(DATA_DIR / \"subject_1_fvep_led_training_1.mat\")\n\nFile:          subject_1_fvep_led_training_1.mat\nSampling rate: 256 Hz\nShape:         (11, 57728)  (11 channels × 57728 samples)\nDuration:      225.5 s\n\n\n\n\n\n\n\n\nFigure 1.1: Subject 1, run 1.\n\n\n\n\n\nTwenty stimulation blocks on CH10, evenly split across the four frequencies. CH11 is the standout: it only ever outputs class 3, regardless of which LED is flashing. The LDA in this session is broken in some way — we’ll come back to it in Ch 7 when we evaluate the baseline trial by trial.\n\n\n1.2.2 Subject 1 x Run 2\n\nplot_session(DATA_DIR / \"subject_1_fvep_led_training_2.mat\")\n\nFile:          subject_1_fvep_led_training_2.mat\nSampling rate: 256 Hz\nShape:         (11, 58112)  (11 channels × 58112 samples)\nDuration:      227.0 s\n\n\n\n\n\n\n\n\nFigure 1.2: Subject 1, run 2.\n\n\n\n\n\nSame trial structure — twenty balanced blocks. CH11 now fires three of the four classes; class 2 (12 Hz, per the mapping above) never appears, even though the trigger does step to 12 Hz five times. The LDA isn’t broken in the same way as run 1, but it’s still missing a class.\n\n\n1.2.3 Subject 2 x Run 1\n\nplot_session(DATA_DIR / \"subject_2_fvep_led_training_1.mat\")\n\nFile:          subject_2_fvep_led_training_1.mat\nSampling rate: 256 Hz\nShape:         (11, 58757)  (11 channels × 58757 samples)\nDuration:      229.5 s\n\n\n\n\n\n\n\n\nFigure 1.3: Subject 2, run 1.\n\n\n\n\n\nCH11 covers all four classes here, and fires for a much larger fraction of samples than either subject-1 session — the LDA is genuinely trying in this run. The flip side: a couple of EEG channels (notably PO3 and O1) push well past the ±50 µV clip throughout, which usually points at electrode contact issues rather than brain signal.\n\n\n1.2.4 Subject 2 x Run 2\n\nplot_session(DATA_DIR / \"subject_2_fvep_led_training_2.mat\")\n\nFile:          subject_2_fvep_led_training_2.mat\nSampling rate: 256 Hz\nShape:         (11, 57697)  (11 channels × 57697 samples)\nDuration:      225.4 s\n\n\n\n\n\n\n\n\nFigure 1.4: Subject 2, run 2.\n\n\n\n\n\nTwenty trials, all four classes on CH11, EEG channels mostly quiet within the clip. The cleanest of the four for downstream work — and the one we’ll lean on as the running example in later chapters.\n\n\n\n\nGuger, Christoph, Brendan Z. Allison, Bernhard Großwindhager, et al. 2012. “How Many People Could Use an SSVEP BCI?” Frontiers in Neuroscience 6: 169. https://doi.org/10.3389/fnins.2012.00169.",
+    "crumbs": [
+      "Data",
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>The Recordings</span>"
+    ]
+  },
+  {
+    "objectID": "02-ssvep-signature.html",
+    "href": "02-ssvep-signature.html",
+    "title": "2  Where the SSVEP Lives",
+    "section": "",
+    "text": "2.1 A note on the example file\nThe book’s running example is subject_2_fvep_led_training_2.mat — the cleanest of the four sessions for downstream work. This chapter is the one exception: it uses subject_1_fvep_led_training_1.mat instead, and it’s worth saying why.\nThe four stimulation frequencies (9, 10, 12, 15 Hz) overlap with the alpha rhythm (8–12 Hz), a strong natural occipital oscillation that’s there whether or not the LED is flickering. In raw, unfiltered PSDs that means the peak we want to see (the SSVEP at the stim frequency) competes with the peak we don’t (alpha at ~10 Hz). On the running file, alpha wins on most classes — the 12 Hz class on Oz, for example, has alpha twice as tall as the stim peak. A “see the SSVEP peak” demo on that file would mostly show alpha.\nsubject_1_fvep_led_training_1.mat shows the SSVEP rising above alpha on Oz for every class, so the raw-data demos work visually. The file does have the broken LDA (CH11 stuck on class 3) flagged in Ch 1 — irrelevant here, since this chapter doesn’t use CH11. The running example resumes from Ch 3 onward, once filtering takes alpha out of the picture.",
+    "crumbs": [
+      "Data",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Where the SSVEP Lives</span>"
+    ]
+  },
+  {
+    "objectID": "02-ssvep-signature.html#where-the-electrodes-sit",
+    "href": "02-ssvep-signature.html#where-the-electrodes-sit",
+    "title": "2  Where the SSVEP Lives",
+    "section": "2.2 Where the electrodes sit",
+    "text": "2.2 Where the electrodes sit\n\n\n\n\n\n\nFigure 2.1: Electrode montage — eight occipital sites over visual cortex.\n\n\n\nThe eight EEG channels (PO7, PO3, POz, PO4, PO8, O1, Oz, O2) cluster over visual cortex (V1/V2). SSVEP is generated there because that’s where flicker-driven oscillations originate — the montage is purpose-built for SSVEP, not a generic EEG cap.",
+    "crumbs": [
+      "Data",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Where the SSVEP Lives</span>"
+    ]
+  },
+  {
+    "objectID": "02-ssvep-signature.html#the-signal-across-the-8-occipital-electrodes",
+    "href": "02-ssvep-signature.html#the-signal-across-the-8-occipital-electrodes",
+    "title": "2  Where the SSVEP Lives",
+    "section": "2.3 The signal across the 8 occipital electrodes",
+    "text": "2.3 The signal across the 8 occipital electrodes\n\nfrom pathlib import Path\nimport numpy as np\nimport scipy.io\nimport matplotlib.pyplot as plt\nfrom scipy.signal import welch\n\nDATA_DIR = Path(\"data\")\nEEG_LABELS = [\"PO7\", \"PO3\", \"POz\", \"PO4\", \"PO8\", \"O1\", \"Oz\", \"O2\"]\nOZ = 7  # zero-indexed: y[7] is CH8 = Oz\n\nmat = scipy.io.loadmat(DATA_DIR / \"subject_1_fvep_led_training_1.mat\")\nfs = int(mat[\"fs\"][0, 0])\ny = mat[\"y\"]\n\n\ndef find_trials(y):\n    \"\"\"Return [(start_idx, end_idx, freq_hz), ...] from CH10 transitions.\"\"\"\n    ch10 = y[9].astype(int)\n    active = (ch10 != 0).astype(int)\n    diff = np.diff(active)\n    starts = np.where(diff == 1)[0] + 1\n    ends = np.where(diff == -1)[0] + 1\n    return [(s, e, int(ch10[s])) for s, e in zip(starts, ends)]\n\n\ntrials = find_trials(y)\nprint(f\"{len(trials)} trials, durations {sorted({round((e-s)/fs, 2) for s,e,_ in trials})} s\")\nprint(f\"Class counts: {dict(sorted({f: sum(1 for _,_,fr in trials if fr==f) for _,_,f in trials}.items()))}\")\n\n20 trials, durations [np.float64(7.36)] s\nClass counts: {9: 5, 10: 5, 12: 5, 15: 5}\n\n\nSingle-trial PSDs are noisy — not every trial shows the SSVEP equally clearly. For the demos in this chapter we pick the single trial with the strongest Oz response at its stimulation frequency, so the patterns we’re trying to point at are visible. Block 3 will show the per-class averages, where the peaks emerge robustly across all five trials of each class.\n\ndef oz_power_at_stim(trial):\n    s, e, fr = trial\n    ff, pxx = welch(y[OZ, s:e], fs=fs, nperseg=min(1024, e - s))\n    return pxx[np.argmin(np.abs(ff - fr))]\n\n\ndemo_trial = max(trials, key=oz_power_at_stim)\ns, e, f_hz = demo_trial\nprint(f\"Demo trial: {f_hz} Hz, t = {s / fs:.1f}–{e / fs:.1f} s\")\n\nDemo trial: 9 Hz, t = 209.5–216.9 s\n\n\n\nt = np.arange(s, e) / fs\n\nfig, axes = plt.subplots(8, 1, figsize=(12, 9), sharex=True)\nfor i, ax in enumerate(axes):\n    ax.plot(t, y[i + 1, s:e], lw=0.5)\n    ax.set_ylabel(EEG_LABELS[i], fontsize=9, rotation=0, ha=\"right\", va=\"center\")\n    ax.set_ylim(-50, 50)\n    ax.tick_params(labelsize=7)\naxes[-1].set_xlabel(\"Time (s)\")\nfig.suptitle(f\"Demo trial: {f_hz} Hz stimulation, {(e - s) / fs:.2f} s\", fontsize=10)\nfig.tight_layout()\nfig.savefig(\"images/02-ssvep-signature_channels.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 2.2: Eight occipital channels during one stimulation trial.\n\n\n\n\n\nAll eight channels show rhythmic activity during the trial — the raw EEG isn’t dramatically different from rest at a glance, but the pattern is there. The channels are clearly correlated; PO3/POz/PO4 in the middle show the largest swings. Going from time domain to frequency domain is what makes the SSVEP unmistakable — that’s the next plot.",
+    "crumbs": [
+      "Data",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Where the SSVEP Lives</span>"
+    ]
+  },
+  {
+    "objectID": "02-ssvep-signature.html#seeing-the-peak-welch-psd-on-oz",
+    "href": "02-ssvep-signature.html#seeing-the-peak-welch-psd-on-oz",
+    "title": "2  Where the SSVEP Lives",
+    "section": "2.4 Seeing the peak — Welch PSD on Oz",
+    "text": "2.4 Seeing the peak — Welch PSD on Oz\n\nff, pxx = welch(y[OZ, s:e], fs=fs, nperseg=min(1024, e - s))\n\nfig, ax = plt.subplots(figsize=(10, 4))\nax.plot(ff, pxx, lw=1.2)\nax.axvline(f_hz, color=\"C3\", ls=\"--\", alpha=0.7, label=f\"f = {f_hz} Hz\")\nax.axvline(2 * f_hz, color=\"C1\", ls=\"--\", alpha=0.7, label=f\"2f = {2 * f_hz} Hz\")\nax.set_xlim(0, 50)\nax.set_xlabel(\"Frequency (Hz)\")\nax.set_ylabel(\"Power\")\nax.set_title(f\"Oz, single trial ({f_hz} Hz stimulation)\")\nax.legend()\nfig.tight_layout()\nfig.savefig(\"images/02-ssvep-signature_psd.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 2.3: Welch PSD on Oz for the same trial. Dashed lines mark the stimulation frequency f and its second harmonic 2f.\n\n\n\n\n\nThere it is: a sharp peak at f — phase-locked, narrowband response from visual cortex to the periodic LED. The second harmonic at 2f is also visible and sometimes nearly as tall, because SSVEP responses aren’t perfectly sinusoidal — the visual cortex puts energy into harmonics too.\nThe other peaks aren’t SSVEP. The tall spike below 1 Hz is baseline drift — slow electrode polarization, breathing, sweat — amplified by the 1/f power law that EEG follows, which is why DC always wins on raw spectra. The bumps at 2–3 Hz are mostly eye-movement and blink artifacts capacitively coupling into the occipital electrodes; the small bump near 10 Hz is the natural alpha rhythm. All three are present in the rest period before this trial too, at similar or larger amplitude — they have nothing to do with the LED. Removing them is the job of Ch 3 (filtering); for now the point is to see what’s actually in raw data, SSVEP and noise side by side.\nWithout the SSVEP peak the BCI has nothing to classify — everything in later chapters is built on it.",
+    "crumbs": [
+      "Data",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Where the SSVEP Lives</span>"
+    ]
+  },
+  {
+    "objectID": "02-ssvep-signature.html#four-classes-four-peaks",
+    "href": "02-ssvep-signature.html#four-classes-four-peaks",
+    "title": "2  Where the SSVEP Lives",
+    "section": "2.5 Four classes, four peaks",
+    "text": "2.5 Four classes, four peaks\n\nfig, ax = plt.subplots(figsize=(11, 5))\ncolors = {9: \"C0\", 10: \"C1\", 12: \"C2\", 15: \"C3\"}\nfor target_f in [9, 10, 12, 15]:\n    psds = []\n    for s_i, e_i, fr in trials:\n        if fr == target_f:\n            ff, pxx = welch(y[OZ, s_i:e_i], fs=fs, nperseg=min(1024, e_i - s_i))\n            psds.append(pxx)\n    avg = np.mean(psds, axis=0)\n    ax.plot(ff, avg, label=f\"{target_f} Hz\", color=colors[target_f], lw=1.4)\n    ax.axvline(target_f, color=colors[target_f], ls=\"--\", alpha=0.3)\n\nax.set_xlim(5, 35)\nax.set_xlabel(\"Frequency (Hz)\")\nax.set_ylabel(\"Power\")\nax.set_title(\"Oz, average PSD across 5 trials per class\")\nax.legend(title=\"Stim freq\")\nfig.tight_layout()\nfig.savefig(\"images/02-ssvep-signature_classes.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 2.4: Average PSD on Oz, one curve per stimulation class. Dashed verticals mark the four stimulation frequencies.\n\n\n\n\n\nEach class lights up where it should: 9 Hz peaks at 9, 15 Hz peaks at 15, and where the fundamental brushes alpha — 10 and 12 Hz — the second harmonic at 20 and 24 Hz takes over as the dominant feature. That’s a useful preview: a classifier doesn’t have to bet on the fundamental alone. The four frequencies were chosen so no two classes share a low-order harmonic and so the highest still leaves Nyquist headroom (fs = 256 Hz, 4× the highest stim freq), which keeps the spectrum non-overlapping enough that simple peak-reading is plausible. We come back to this in Ch 5 (features) and Ch 7 (classification).",
+    "crumbs": [
+      "Data",
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Where the SSVEP Lives</span>"
+    ]
+  },
+  {
+    "objectID": "03-filtering.html",
+    "href": "03-filtering.html",
+    "title": "3  Filtering: Bandpass and Notch",
+    "section": "",
+    "text": "3.1 Back to the running example\nCh 2 borrowed subject_1_fvep_led_training_1.mat for visual intuition because the running file’s raw spectrum was dominated by the alpha rhythm and slow drift. With filtering in scope, the running example — subject_2_fvep_led_training_2.mat — returns from this chapter onward. Filtering doesn’t fix the alpha problem (more on that below), but it does take the drift out of the picture so the spectrum becomes readable.",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Filtering: Bandpass and Notch</span>"
+    ]
+  },
+  {
+    "objectID": "03-filtering.html#what-the-unfiltered-spectrum-looks-like",
+    "href": "03-filtering.html#what-the-unfiltered-spectrum-looks-like",
+    "title": "3  Filtering: Bandpass and Notch",
+    "section": "3.2 What the unfiltered spectrum looks like",
+    "text": "3.2 What the unfiltered spectrum looks like\n\nfrom pathlib import Path\nimport numpy as np\nimport scipy.io\nimport matplotlib.pyplot as plt\nfrom scipy.signal import welch, butter, filtfilt, iirnotch, freqz\n\nDATA_DIR = Path(\"data\")\nOZ = 7\n\nmat = scipy.io.loadmat(DATA_DIR / \"subject_2_fvep_led_training_2.mat\")\nfs = int(mat[\"fs\"][0, 0])\ny = mat[\"y\"]\noz_raw = y[OZ, fs:]  # skip the first second (amplifier startup transient)\n\nff_raw, pxx_raw = welch(oz_raw, fs=fs, nperseg=4096)\nprint(f\"Frequency resolution: {ff_raw[1] - ff_raw[0]:.3f} Hz\")\nprint(f\"Power at 0.5 Hz: {pxx_raw[np.argmin(np.abs(ff_raw - 0.5))]:.1f}\")\nprint(f\"Power at 50 Hz : {pxx_raw[np.argmin(np.abs(ff_raw - 50))]:.4f}\")\n\nFrequency resolution: 0.062 Hz\nPower at 0.5 Hz: 134.9\nPower at 50 Hz : 0.0012\n\n\n\nfig, ax = plt.subplots(figsize=(11, 4.5))\nax.semilogy(ff_raw, pxx_raw, lw=1)\nfor f in [9, 10, 12, 15]:\n    ax.axvline(f, color=\"C3\", ls=\"--\", alpha=0.3)\nax.axvline(50, color=\"C1\", ls=\"--\", alpha=0.4, label=\"50 Hz (line)\")\nax.set_xlim(0, 80)\nax.set_xlabel(\"Frequency (Hz)\")\nax.set_ylabel(\"Power (log)\")\nax.set_title(\"Oz, raw — full session\")\nax.legend()\nfig.tight_layout()\nfig.savefig(\"images/03-filtering_raw_psd.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 3.1: Long-window PSD on Oz, full session, log-y axis.\n\n\n\n\n\nTwo things stand out in the raw spectrum, neither of them the SSVEP. The biggest peak is at 0.5 Hz — slow baseline drift, amplified by the 1/f power law that EEG follows. Above ~40 Hz the spectrum drops off into the noise floor; the 50 Hz line-frequency spike that’s typically conspicuous in raw EEG isn’t there at all (power ≈ 0). The g.tec amplifier almost certainly applied its own front-end filtering before writing the file — convenient, but we’ll still design a notch for the same reason cars have seatbelts. The four stimulation frequencies (red dashes) sit inside the alpha band and are barely distinguishable from the background.",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Filtering: Bandpass and Notch</span>"
+    ]
+  },
+  {
+    "objectID": "03-filtering.html#designing-the-filter",
+    "href": "03-filtering.html#designing-the-filter",
+    "title": "3  Filtering: Bandpass and Notch",
+    "section": "3.3 Designing the filter",
+    "text": "3.3 Designing the filter\n\ndef make_filters(fs, low=5.0, high=40.0, line=50.0, order=4, notch_q=30):\n    bp_b, bp_a = butter(order, [low, high], btype=\"band\", fs=fs)\n    n_b, n_a = iirnotch(line, notch_q, fs=fs)\n    return (bp_b, bp_a), (n_b, n_a)\n\n\ndef apply_filters(x, bp, notch):\n    x = filtfilt(*bp, x)\n    x = filtfilt(*notch, x)\n    return x\n\n\nbp, notch = make_filters(fs)\noz_filt = apply_filters(oz_raw, bp, notch)\n\n\nw_bp, h_bp = freqz(*bp, fs=fs, worN=4096)\nw_n, h_n = freqz(*notch, fs=fs, worN=4096)\ncombined_db = 20 * np.log10(np.abs(h_bp * h_n) + 1e-12)\n\nfig, ax = plt.subplots(figsize=(11, 4))\nax.plot(w_bp, combined_db, lw=1.2)\nfor f in [9, 10, 12, 15]:\n    ax.axvline(f, color=\"C3\", ls=\"--\", alpha=0.3)\nax.axvline(50, color=\"C1\", ls=\"--\", alpha=0.4)\nax.axhline(-3, color=\"gray\", ls=\":\", alpha=0.5, label=\"−3 dB\")\nax.set_xlim(0, 80)\nax.set_ylim(-60, 5)\nax.set_xlabel(\"Frequency (Hz)\")\nax.set_ylabel(\"Gain (dB)\")\nax.set_title(\"Bandpass + notch — combined response\")\nax.legend()\nfig.tight_layout()\nfig.savefig(\"images/03-filtering_response.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 3.2: Combined bandpass (5–40 Hz, 4th-order Butterworth) and notch (50 Hz) frequency response.\n\n\n\n\n\nNotice how clean this curve is compared to the raw PSD above — no jitter, no hairy line. That’s because this isn’t an estimate from data; freqz evaluates the filter’s transfer function analytically from its coefficients, so there’s no variance to average down. It’s what the filter does by construction, not what we measured.\nThe passband at 5–40 Hz comfortably covers the four fundamentals (9, 10, 12, 15 Hz) and the second harmonics of the lower three (18, 20, 24 Hz) — the harmonic of 15 Hz at 30 Hz also gets through. We use filtfilt for zero phase (forward + reverse pass) so the SSVEP’s phase relative to the stimulus isn’t smeared, and a 4th-order Butterworth so the passband is flat (no ripple riding on top of the SSVEP peaks). The 50 Hz notch is narrow (Q = 30) — defensive even though there’s nothing there to remove on this file.",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Filtering: Bandpass and Notch</span>"
+    ]
+  },
+  {
+    "objectID": "03-filtering.html#before-and-after-spectrum",
+    "href": "03-filtering.html#before-and-after-spectrum",
+    "title": "3  Filtering: Bandpass and Notch",
+    "section": "3.4 Before and after — spectrum",
+    "text": "3.4 Before and after — spectrum\n\nff_filt, pxx_filt = welch(oz_filt, fs=fs, nperseg=4096)\n\nfig, ax = plt.subplots(figsize=(11, 4.5))\nax.semilogy(ff_raw, pxx_raw, lw=1, alpha=0.5, label=\"raw\")\nax.semilogy(ff_filt, pxx_filt, lw=1, label=\"filtered\")\nfor f in [9, 10, 12, 15]:\n    ax.axvline(f, color=\"C3\", ls=\"--\", alpha=0.3)\nax.set_xlim(0, 80)\nax.set_xlabel(\"Frequency (Hz)\")\nax.set_ylabel(\"Power (log)\")\nax.set_title(\"Oz — raw vs filtered\")\nax.legend()\nfig.tight_layout()\nfig.savefig(\"images/03-filtering_bef_aft_psd.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 3.3: Oz PSD, raw vs filtered, full session, log-y.\n\n\n\n\n\nThe drift below ~3 Hz drops by orders of magnitude; everything above ~45 Hz drops into numerical noise; in between the two spectra are the same. This is what filtering does — and only what filtering does. Inside the passband the per-sample values are unchanged by Butterworth filtering (its passband is flat by construction), so the alpha rhythm at ~10 Hz is still right where it was, the SSVEP peaks are still where they were, and the SNR between them is identical. Filtering makes the spectrum readable; it doesn’t change what’s in the analysis band.",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Filtering: Bandpass and Notch</span>"
+    ]
+  },
+  {
+    "objectID": "03-filtering.html#before-and-after-time-domain",
+    "href": "03-filtering.html#before-and-after-time-domain",
+    "title": "3  Filtering: Bandpass and Notch",
+    "section": "3.5 Before and after — time domain",
+    "text": "3.5 Before and after — time domain\n\nwindow_s, window_e = 30 * fs, 38 * fs\nt = np.arange(window_s, window_e) / fs\n\nfig, axes = plt.subplots(2, 1, figsize=(12, 5), sharex=True)\naxes[0].plot(t, y[OZ, window_s:window_e], lw=0.6)\naxes[0].set_ylabel(\"raw  (µV)\")\naxes[0].set_title(\"Oz — raw vs filtered\")\naxes[1].plot(t, oz_filt[window_s - fs : window_e - fs], lw=0.6, color=\"C1\")\naxes[1].set_ylabel(\"filtered  (µV)\")\naxes[1].set_xlabel(\"Time (s)\")\nfig.tight_layout()\nfig.savefig(\"images/03-filtering_bef_aft_time.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 3.4: Same 8-second window of Oz, raw vs filtered.\n\n\n\n\n\nThe raw trace wanders around a slowly-shifting baseline (that’s the 0.5 Hz drift); the filtered trace sits cleanly around zero. The fast oscillations — the part that actually carries the SSVEP — look effectively identical. Removing the drift matters most for time-domain features (per-trial means and amplitudes) and for any feature that’s sensitive to absolute level; for spectral features it’s almost cosmetic.",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Filtering: Bandpass and Notch</span>"
+    ]
+  },
+  {
+    "objectID": "03-filtering.html#why-this-is-enough-and-what-it-doesnt-fix",
+    "href": "03-filtering.html#why-this-is-enough-and-what-it-doesnt-fix",
+    "title": "3  Filtering: Bandpass and Notch",
+    "section": "3.6 Why this is enough — and what it doesn’t fix",
+    "text": "3.6 Why this is enough — and what it doesn’t fix\nCompared to motor-imagery or P300 paradigms, SSVEP needs almost no preprocessing. The response is generated in a small, well-localized region of cortex (V1/V2), it’s narrowband and phase-locked to the stimulus, and the band it lives in (~9–30 Hz including harmonics) doesn’t overlap with the worst contaminants — eye blinks live below 4 Hz and muscle activity above 40 Hz, both safely outside the passband. Heavy artifact removal (ICA, regression-based EOG correction, full re-referencing pipelines) is overkill here and risks subtracting out signal you wanted to keep.\nWhat filtering on this file doesn’t fix is the alpha rhythm sitting on top of the lower stim frequencies (9, 10, 12 Hz) — that’s a within-passband collision and no linear filter will untangle it. Two later chapters handle it differently. Ch 5 builds SNR features that normalize each peak by its neighbourhood, so an alpha bump that’s tall but flanked by similarly tall bins gets deflated relative to a peak that genuinely stands out. Ch 6 takes a phase-aware route: CCA against sine/cosine references at the stim frequencies. The SSVEP is phase-locked to the LED, alpha isn’t, so the correlation with a 10 Hz template behaves very differently for an actual 10 Hz stim trial than it does for spontaneous 10 Hz alpha — even though both have a peak at 10 Hz in the PSD.",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Filtering: Bandpass and Notch</span>"
+    ]
+  },
+  {
+    "objectID": "04-epoching.html",
+    "href": "04-epoching.html",
+    "title": "4  Epoching: Recovering Trials from Triggers",
+    "section": "",
+    "text": "4.1 Loading and filtering\nSame setup as Ch 3 — running example, filter chain applied to all eight EEG channels. CH10 (the trigger) and CH11 (the LDA output) are integer step functions; filtering would smear them, so we leave them alone.\nfrom pathlib import Path\nimport numpy as np\nimport scipy.io\nimport matplotlib.pyplot as plt\nfrom scipy.signal import butter, filtfilt, iirnotch\n\nDATA_DIR = Path(\"data\")\nEEG_LABELS = [\"PO7\", \"PO3\", \"POz\", \"PO4\", \"PO8\", \"O1\", \"Oz\", \"O2\"]\n\nmat = scipy.io.loadmat(DATA_DIR / \"subject_2_fvep_led_training_2.mat\")\nfs = int(mat[\"fs\"][0, 0])\ny = mat[\"y\"]\n\n\ndef make_filters(fs, low=5.0, high=40.0, line=50.0, order=4, notch_q=30):\n    bp_b, bp_a = butter(order, [low, high], btype=\"band\", fs=fs)\n    n_b, n_a = iirnotch(line, notch_q, fs=fs)\n    return (bp_b, bp_a), (n_b, n_a)\n\n\ndef apply_filters(x, bp, notch):\n    return filtfilt(*notch, filtfilt(*bp, x))\n\n\nbp, notch = make_filters(fs)\ny_filt = y.astype(float).copy()\nfor ci in range(1, 9):\n    y_filt[ci] = apply_filters(y[ci], bp, notch)\n\nprint(f\"y shape:      {y.shape}\")\nprint(f\"y_filt shape: {y_filt.shape}  (CH2–9 filtered, CH1/CH10/CH11 untouched)\")\n\ny shape:      (11, 57697)\ny_filt shape: (11, 57697)  (CH2–9 filtered, CH1/CH10/CH11 untouched)",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>Epoching: Recovering Trials from Triggers</span>"
+    ]
+  },
+  {
+    "objectID": "04-epoching.html#the-trigger-channel-over-time",
+    "href": "04-epoching.html#the-trigger-channel-over-time",
+    "title": "4  Epoching: Recovering Trials from Triggers",
+    "section": "4.2 The trigger channel over time",
+    "text": "4.2 The trigger channel over time\n\nch10 = y[9].astype(int)\nt = np.arange(len(ch10)) / fs\n\nfig, ax = plt.subplots(figsize=(12, 3))\nax.plot(t, ch10, drawstyle=\"steps-post\", lw=0.8)\nax.set_yticks([0, 9, 10, 12, 15])\nax.set_xlabel(\"Time (s)\")\nax.set_ylabel(\"CH10 (Hz)\")\nax.set_title(\"Trigger channel — full session\")\nfig.tight_layout()\nfig.savefig(\"images/04-epoching_trigger_timeline.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 4.1: CH10 across the full session — the only document of trial structure we have.\n\n\n\n\n\nA clean step function. CH10 sits at zero between trials and steps to one of {9, 10, 12, 15} while a stim block is active. The plateaus look identical in width and the rests between them look identical too — that’s the experimental schedule, hardcoded in g.tec’s stimulator. The class sequence cycles 15 → 12 → 10 → 9 and repeats five times. None of this is documented in data_description.txt; everything we know about trial timing comes from staring at this one channel.",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>Epoching: Recovering Trials from Triggers</span>"
+    ]
+  },
+  {
+    "objectID": "04-epoching.html#detecting-trial-boundaries",
+    "href": "04-epoching.html#detecting-trial-boundaries",
+    "title": "4  Epoching: Recovering Trials from Triggers",
+    "section": "4.3 Detecting trial boundaries",
+    "text": "4.3 Detecting trial boundaries\n\ndef find_trials(y):\n    \"\"\"Return [(start_idx, end_idx, freq_hz), ...] from CH10 transitions.\"\"\"\n    ch10 = y[9].astype(int)\n    active = (ch10 != 0).astype(int)\n    diff = np.diff(active)\n    starts = np.where(diff == 1)[0] + 1\n    ends = np.where(diff == -1)[0] + 1\n    return [(int(s), int(e), int(ch10[s])) for s, e in zip(starts, ends)]\n\n\ntrials = find_trials(y)\ndurations = sorted({round((e - s) / fs, 3) for s, e, _ in trials})\nprint(f\"Trials detected: {len(trials)}\")\nprint(f\"Distinct durations (s): {durations}\")\nprint(f\"First five trials (start_s, end_s, duration_s, class):\")\nfor s, e, fr in trials[:5]:\n    print(f\"  ({s / fs:6.2f}, {e / fs:6.2f}, {(e - s) / fs:5.2f}, {fr})\")\n\nTrials detected: 20\nDistinct durations (s): [7.355]\nFirst five trials (start_s, end_s, duration_s, class):\n  ( 10.00,  17.36,  7.36, 15)\n  ( 20.50,  27.86,  7.36, 12)\n  ( 31.00,  38.36,  7.36, 10)\n  ( 41.50,  48.86,  7.36, 9)\n  ( 52.00,  59.36,  7.36, 15)\n\n\nEdge detection on (CH10 != 0): rising edges mark trial onsets, falling edges mark offsets. Twenty trials, all exactly 7.36 s long. The fact that every trial is the same length is convenient — it lets us build a rectangular tensor without padding decisions.",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>Epoching: Recovering Trials from Triggers</span>"
+    ]
+  },
+  {
+    "objectID": "04-epoching.html#trials-per-class",
+    "href": "04-epoching.html#trials-per-class",
+    "title": "4  Epoching: Recovering Trials from Triggers",
+    "section": "4.4 Trials per class",
+    "text": "4.4 Trials per class\n\nclasses = sorted({fr for _, _, fr in trials})\ncounts = [sum(1 for _, _, fr in trials if fr == c) for c in classes]\n\nfig, ax = plt.subplots(figsize=(7, 3.5))\nbars = ax.bar([str(c) for c in classes], counts, color=[\"C0\", \"C1\", \"C2\", \"C3\"])\nfor bar, c in zip(bars, counts):\n    ax.text(bar.get_x() + bar.get_width() / 2, c + 0.05, str(c), ha=\"center\", fontsize=10)\nax.set_xlabel(\"Stimulation class (Hz)\")\nax.set_ylabel(\"Trials\")\nax.set_ylim(0, max(counts) + 1)\nax.set_title(\"Trials per class — running session\")\nfig.tight_layout()\nfig.savefig(\"images/04-epoching_trial_counts.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 4.2: Trial count per stimulation class.\n\n\n\n\n\nFive trials per class, perfectly balanced. Class balance matters for the classifier in Ch 7: an imbalanced training set biases the decision boundary toward the majority class. Five is a small training set per class — for now it’s what we have, and we’ll lean on cross-validation rather than a held-out split when we actually fit a model.",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>Epoching: Recovering Trials from Triggers</span>"
+    ]
+  },
+  {
+    "objectID": "04-epoching.html#building-the-epoch-tensor",
+    "href": "04-epoching.html#building-the-epoch-tensor",
+    "title": "4  Epoching: Recovering Trials from Triggers",
+    "section": "4.5 Building the epoch tensor",
+    "text": "4.5 Building the epoch tensor\n\ndef epoch(y_filt, trials, eeg_idx=slice(1, 9)):\n    \"\"\"Stack trials into (n_trials, n_channels, n_samples). All trials must share length.\"\"\"\n    lengths = {e - s for s, e, _ in trials}\n    if len(lengths) != 1:\n        raise ValueError(f\"Trials have varying lengths: {lengths}\")\n    n_samples = lengths.pop()\n    epochs = np.stack([y_filt[eeg_idx, s:s + n_samples] for s, _, _ in trials])\n    labels = np.array([fr for _, _, fr in trials])\n    return epochs, labels\n\n\nepochs, labels = epoch(y_filt, trials)\nprint(f\"epochs shape: {epochs.shape}  (n_trials, n_channels, n_samples)\")\nprint(f\"labels shape: {labels.shape}, unique: {sorted(set(labels))}\")\nprint(f\"Per-trial duration: {epochs.shape[2] / fs:.2f} s\")\n\nepochs shape: (20, 8, 1883)  (n_trials, n_channels, n_samples)\nlabels shape: (20,), unique: [np.int64(9), np.int64(10), np.int64(12), np.int64(15)]\nPer-trial duration: 7.36 s\n\n\nThis is the artifact every later chapter consumes. epochs is (20, 8, 1884) — twenty trials × eight EEG channels × 1884 samples (≈7.36 s at 256 Hz). labels is (20,) with values in {9, 10, 12, 15}. Slicing this tensor is how features get computed (Ch 5), how train/test splits get made (Ch 7), and how truncated-window experiments get run (Ch 8).\n\nep = epochs[0]\nep_label = labels[0]\nt = np.arange(ep.shape[1]) / fs\n\nfig, axes = plt.subplots(8, 1, figsize=(12, 9), sharex=True)\nfor i, ax in enumerate(axes):\n    ax.plot(t, ep[i], lw=0.5)\n    ax.set_ylabel(EEG_LABELS[i], fontsize=9, rotation=0, ha=\"right\", va=\"center\")\n    ax.set_ylim(-50, 50)\n    ax.tick_params(labelsize=7)\naxes[-1].set_xlabel(\"Time (s)\")\nfig.suptitle(f\"epochs[0]: {ep_label} Hz, {ep.shape[1] / fs:.2f} s, filtered\", fontsize=10)\nfig.tight_layout()\nfig.savefig(\"images/04-epoching_example_epoch.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 4.3: One epoch from the tensor — eight channels of the first trial, after filtering.\n\n\n\n\n\nOne trial, eight channels, the same shape that’s now stacked across all twenty. The slow baseline drift that wandered across the time-domain plots in Ch 3 is gone — this is what filtered, epoched data looks like, and from here on every chart will be built from epochs[i] slices.",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>Epoching: Recovering Trials from Triggers</span>"
+    ]
+  },
+  {
+    "objectID": "04-epoching.html#epoch-length-and-the-bci-tradeoff",
+    "href": "04-epoching.html#epoch-length-and-the-bci-tradeoff",
+    "title": "4  Epoching: Recovering Trials from Triggers",
+    "section": "4.6 Epoch length and the BCI tradeoff",
+    "text": "4.6 Epoch length and the BCI tradeoff\nWe’ve used the full 7.36 s of each trial as the epoch length, which is generous. Longer epochs give more cycles of the SSVEP and so a more stable spectral estimate; they also mean the BCI has to wait longer before producing each decision. A real-time SSVEP keyboard typically operates on 1–4 s windows — short enough to feel responsive, long enough that the dominant peak is reliable. We come back to this in Ch 8 (time vs accuracy vs ITR), where we re-run the classifier on truncated epochs and trace out the tradeoff curve. For Ch 5 through Ch 7 we stay with the full-trial epoch as a baseline.",
+    "crumbs": [
+      "Preprocessing",
+      "<span class='chapter-number'>4</span>  <span class='chapter-title'>Epoching: Recovering Trials from Triggers</span>"
+    ]
+  },
+  {
+    "objectID": "05-spectral-features.html",
+    "href": "05-spectral-features.html",
+    "title": "5  Spectral Features",
+    "section": "",
+    "text": "5.1 Setup: load, filter, epoch\nThe pipeline from Ch 3 + Ch 4 in compact form: load the running session, bandpass + notch the eight EEG channels, build the (n_trials, 8, n_samples) epoch tensor.\nfrom pathlib import Path\nimport numpy as np\nimport scipy.io\nimport matplotlib.pyplot as plt\nfrom matplotlib.colors import LogNorm\nfrom scipy.signal import welch, butter, filtfilt, iirnotch\n\nDATA_DIR = Path(\"data\")\nEEG_LABELS = [\"PO7\", \"PO3\", \"POz\", \"PO4\", \"PO8\", \"O1\", \"Oz\", \"O2\"]\nSTIM_FREQS = [9, 10, 12, 15]\nHARMONICS = [1, 2]\n\nmat = scipy.io.loadmat(DATA_DIR / \"subject_2_fvep_led_training_2.mat\")\nfs = int(mat[\"fs\"][0, 0])\ny = mat[\"y\"]\n\n\ndef make_filters(fs, low=5.0, high=40.0, line=50.0, order=4, notch_q=30):\n    bp_b, bp_a = butter(order, [low, high], btype=\"band\", fs=fs)\n    n_b, n_a = iirnotch(line, notch_q, fs=fs)\n    return (bp_b, bp_a), (n_b, n_a)\n\n\ndef apply_filters(x, bp, notch):\n    return filtfilt(*notch, filtfilt(*bp, x))\n\n\ndef find_trials(y):\n    ch10 = y[9].astype(int)\n    active = (ch10 != 0).astype(int)\n    diff = np.diff(active)\n    starts = np.where(diff == 1)[0] + 1\n    ends = np.where(diff == -1)[0] + 1\n    return [(int(s), int(e), int(ch10[s])) for s, e in zip(starts, ends)]\n\n\nbp, notch = make_filters(fs)\ny_filt = y.astype(float).copy()\nfor ci in range(1, 9):\n    y_filt[ci] = apply_filters(y[ci], bp, notch)\n\ntrials = find_trials(y)\nn_samples = trials[0][1] - trials[0][0]\nepochs = np.stack([y_filt[1:9, s:s + n_samples] for s, _, _ in trials])\nlabels = np.array([fr for _, _, fr in trials])\nprint(f\"epochs: {epochs.shape}, labels: {labels.shape}\")\n\nepochs: (20, 8, 1883), labels: (20,)",
+    "crumbs": [
+      "Feature Engineering",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Spectral Features</span>"
+    ]
+  },
+  {
+    "objectID": "05-spectral-features.html#from-an-epoch-to-a-feature-vector",
+    "href": "05-spectral-features.html#from-an-epoch-to-a-feature-vector",
+    "title": "5  Spectral Features",
+    "section": "5.2 From an epoch to a feature vector",
+    "text": "5.2 From an epoch to a feature vector\nFor each of the eight EEG channels we compute Welch’s PSD on the epoch, then read off the amplitude at each candidate stimulation frequency (9, 10, 12, 15 Hz) and its second harmonic (18, 20, 24, 30 Hz). That’s eight values per channel × eight channels = 64 features per trial.\n\nNPERSEG = 512  # 0.5 Hz resolution at fs = 256 Hz\n\n\ndef channel_psd(channel, fs, nperseg=NPERSEG):\n    return welch(channel, fs=fs, nperseg=min(nperseg, len(channel)))\n\n\ndef epoch_features(epoch, fs):\n    \"\"\"Return a (n_channels * len(STIM_FREQS) * len(HARMONICS),) feature vector.\"\"\"\n    feats = []\n    for ch in range(epoch.shape[0]):\n        ff, pxx = channel_psd(epoch[ch], fs)\n        for f in STIM_FREQS:\n            for h in HARMONICS:\n                feats.append(pxx[np.argmin(np.abs(ff - h * f))])\n    return np.array(feats)\n\n\nprint(f\"Feature vector for epochs[0]: shape = {epoch_features(epochs[0], fs).shape}\")\n\nFeature vector for epochs[0]: shape = (64,)\n\n\n\nep_idx = 0\nep = epochs[ep_idx]\nep_label = labels[ep_idx]\n\nfig, axes = plt.subplots(2, 4, figsize=(14, 6), sharey=True)\nfor ci, ax in enumerate(axes.ravel()):\n    ff, pxx = channel_psd(ep[ci], fs)\n    ax.plot(ff, pxx, lw=0.9)\n    for f in STIM_FREQS:\n        ax.axvline(f, color=\"C3\", ls=\"--\", alpha=0.6, lw=0.9)\n        ax.axvline(2 * f, color=\"k\", ls=\":\", alpha=0.55, lw=0.9)\n    ax.set_xlim(5, 35)\n    ax.set_title(EEG_LABELS[ci], fontsize=9)\n    ax.tick_params(labelsize=7)\nfor ax in axes[-1]:\n    ax.set_xlabel(\"Frequency (Hz)\")\nfor ax in axes[:, 0]:\n    ax.set_ylabel(\"Power\")\nfig.suptitle(f\"Trial {ep_idx} — {ep_label} Hz stim\", fontsize=10)\nfig.tight_layout()\nfig.savefig(\"images/05-spectral-features_one_trial.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 5.1: Per-channel PSD for one epoch (15 Hz class). Red dashed lines mark the four fundamentals; black dotted lines mark the four second harmonics. The classifier sees the PSD value at each of these eight frequencies on each of the eight channels.\n\n\n\n\n\nFor this 15 Hz trial the cleanest peaks at 15 Hz are on Oz and O2 — exactly where you’d expect retinotopically. The other channels have power at 15 Hz too, just smaller. The harmonic at 30 Hz is barely there, which matches the chapter-2 finding that 15 Hz on this subject doesn’t drive a strong harmonic. Sampling at expected frequencies — rather than feeding the entire 5–40 Hz spectrum to the classifier — collapses each PSD to a small, physically meaningful number of values: it bakes in what we know about the experiment, gives the model fewer features to overfit to, and is robust to per-trial scaling differences.",
+    "crumbs": [
+      "Feature Engineering",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Spectral Features</span>"
+    ]
+  },
+  {
+    "objectID": "05-spectral-features.html#the-feature-matrix-for-a-whole-session",
+    "href": "05-spectral-features.html#the-feature-matrix-for-a-whole-session",
+    "title": "5  Spectral Features",
+    "section": "5.3 The feature matrix for a whole session",
+    "text": "5.3 The feature matrix for a whole session\n\nfeat_matrix = np.stack([epoch_features(epochs[i], fs) for i in range(len(epochs))])\nprint(f\"feat_matrix shape: {feat_matrix.shape}  (n_trials, n_channels × n_stim × n_harmonics)\")\n\nfeat_matrix shape: (20, 64)  (n_trials, n_channels × n_stim × n_harmonics)\n\n\n\norder = np.lexsort((np.arange(len(labels)), labels))\nsorted_feat = feat_matrix[order]\nsorted_labels = labels[order]\n\nn_per_block = 8  # 8 channels sampled at each (stim freq, harmonic)\ngroup_labels = [f\"{h * f} Hz\" for f in STIM_FREQS for h in HARMONICS]\n\nfig, ax = plt.subplots(figsize=(13, 5))\nim = ax.imshow(sorted_feat, aspect=\"auto\", origin=\"upper\",\n               cmap=\"viridis\", norm=LogNorm())\nfor i in range(1, len(group_labels)):\n    ax.axvline(i * n_per_block - 0.5, color=\"white\", lw=0.8)\nclass_changes = np.where(np.diff(sorted_labels) != 0)[0] + 0.5\nfor r in class_changes:\n    ax.axhline(r, color=\"white\", lw=0.8)\nax.set_xticks([i * n_per_block + n_per_block / 2 - 0.5 for i in range(len(group_labels))])\nax.set_xticklabels(group_labels)\nax.set_xlabel(\"Feature group  (eight channels sampled at each frequency)\")\nyt = [np.where(sorted_labels == c)[0].mean() for c in sorted(set(sorted_labels))]\nax.set_yticks(yt)\nax.set_yticklabels([f\"{c} Hz\" for c in sorted(set(sorted_labels))])\nax.set_ylabel(\"Trial class (5 trials each)\")\nfig.colorbar(im, ax=ax, label=\"Power (log scale)\")\nfig.tight_layout()\nfig.savefig(\"images/05-spectral-features_matrix.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 5.2: Feature matrix, rows sorted by stimulation class. Each row is one trial; each column is one (channel, frequency, harmonic) feature. Vertical lines separate frequency-and-harmonic groups.\n\n\n\n\n\nHow to read this heatmap: each row is one trial, each column is one of the 64 features (8 channels × 8 sampled frequencies). Rows are sorted so the five 9 Hz trials sit at the top, then the 10, 12, and 15 Hz blocks below. Columns are grouped by sampled frequency — the leftmost eight columns are all “PSD power at 9 Hz, one per channel”; the next eight are “PSD power at 18 Hz” (the second harmonic of 9 Hz); and so on through 30 Hz.\nClass structure shows up as bright cells lining up along the column whose frequency matches the row’s class. The top five rows (9 Hz) are brightest in the 9 Hz column block — exactly where you’d expect — and you can also see them light up in the 18 Hz column block, which is the second harmonic. That’s the harmonics earning their place in the feature vector: they fire independently of the fundamental, adding evidence rather than duplicating it. The 10 Hz row block follows the same pattern at 10 and 20 Hz. Where the eye can already separate the classes from the matrix alone, a linear classifier almost certainly can too.\nThe 12 and 15 Hz row blocks look noticeably dimmer than 9 and 10 Hz — same story as Ch 2: those classes have weaker raw-power features on this subject (12 Hz overlaps with alpha, 15 Hz drives a smaller harmonic). The classifier has less to work with there.",
+    "crumbs": [
+      "Feature Engineering",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Spectral Features</span>"
+    ]
+  },
+  {
+    "objectID": "05-spectral-features.html#snr-features",
+    "href": "05-spectral-features.html#snr-features",
+    "title": "5  Spectral Features",
+    "section": "5.4 SNR features",
+    "text": "5.4 SNR features\nRaw amplitude features are sensitive to the per-trial overall level — attention, electrode drift across the session, residual 1/f tilt. We can normalize each sampled bin by the average amplitude in its neighbourhood, turning power into a signal-to-noise ratio. The peak still has to stand out against its background, not merely be tall in absolute terms.\nTo make the transformation concrete, take a single cell from the matrix above: the 9 Hz feature on Oz for the last 9 Hz trial (one of the cleanest single-trial SSVEPs in the session). Here’s its local PSD around 9 Hz:\n\nti, ch_idx, f_target = 19, 7, 9.0\nff_ex, pxx_ex = channel_psd(epochs[ti, ch_idx], fs)\ndf = ff_ex[1] - ff_ex[0]\ntarget_bin = np.argmin(np.abs(ff_ex - f_target))\nhalf_bw_hz, neigh_hw_hz = 0.6, 2.5\nexcl_bins = max(1, int(round(half_bw_hz / df)))\nhalf_bins = int(round(neigh_hw_hz / df))\nlo = max(0, target_bin - half_bins)\nhi = min(len(pxx_ex), target_bin + half_bins + 1)\nneigh_idx = np.arange(lo, hi)\nneigh_idx = neigh_idx[np.abs(neigh_idx - target_bin) &gt; excl_bins]\n\ntarget_p = pxx_ex[target_bin]\nneigh_mean = pxx_ex[neigh_idx].mean()\n\nfig, ax = plt.subplots(figsize=(10, 4))\nax.plot(ff_ex, pxx_ex, lw=1.0)\nax.axvspan(ff_ex[lo], ff_ex[min(hi - 1, len(ff_ex) - 1)], color=\"lightgray\",\n           alpha=0.5, label=\"neighbourhood (±2.5 Hz)\")\nax.axvspan(ff_ex[max(0, target_bin - excl_bins)], ff_ex[min(len(ff_ex) - 1, target_bin + excl_bins)],\n           color=\"white\", alpha=1.0)\nax.axhline(neigh_mean, color=\"k\", ls=\"--\", alpha=0.7,\n           label=f\"neighbour mean = {neigh_mean:.2f}\")\nax.plot(ff_ex[target_bin], target_p, \"o\", color=\"C3\", ms=10,\n        label=f\"target = {f_target:.0f} Hz, power = {target_p:.2f}\")\nax.set_xlim(4, 16)\nax.set_xlabel(\"Frequency (Hz)\")\nax.set_ylabel(\"Power\")\nax.set_title(f\"Trial {ti} ({labels[ti]} Hz class), Oz — local PSD around {f_target:.0f} Hz\")\nax.legend(loc=\"upper right\")\nfig.tight_layout()\nfig.savefig(\"images/05-spectral-features_snr_example.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\nprint(f\"  raw power:           {target_p:.2f}\")\nprint(f\"  neighbour mean:      {neigh_mean:.2f}\")\nprint(f\"  SNR  =  {target_p:.2f} / {neigh_mean:.2f}  =  {target_p / neigh_mean:.2f}\")\n\n\n\n\n\n\n\nFigure 5.3: Local PSD on Oz for the last 9 Hz trial. The target bin (red) sits well above the average of its flanking neighbours (dashed line) — the SNR feature is the ratio of the two.\n\n\n\n\n\n  raw power:           11.87\n  neighbour mean:      3.79\n  SNR  =  11.87 / 3.79  =  3.13\n\n\nThe target sits about 3× above its background — that’s the SNR feature value for this single cell. The same calculation runs across all 64 (channel × frequency) entries of the matrix.\nWhat does the transformation actually do? Take a contrasting cell from the same trial: the 12 Hz feature on Oz has raw power 1.89 (small) but its neighbourhood includes the alpha bump near 10 Hz, so the neighbour mean is 6.13. Their ratio is 0.31 — well below 1, signalling “this bin sits below its surroundings”, i.e. there is no SSVEP peak at 12 Hz on this trial. Raw power can’t make that distinction; SNR can. The cell’s pre/post values: raw = 1.89, SNR = 0.31. Both numbers go into the heatmap as “low”, but the SNR version is more committed about it.\n\ndef snr_at(ff, pxx, f_target, half_bw_hz=0.6, neigh_hw_hz=2.5):\n    \"\"\"Power at the target bin / mean power in a flanking neighborhood,\n    excluding ±half_bw_hz around the target.\"\"\"\n    df = ff[1] - ff[0]\n    excl = max(1, int(round(half_bw_hz / df)))\n    half = int(round(neigh_hw_hz / df))\n    target = np.argmin(np.abs(ff - f_target))\n    lo, hi = max(0, target - half), min(len(pxx), target + half + 1)\n    idx = np.arange(lo, hi)\n    idx = idx[np.abs(idx - target) &gt; excl]\n    if len(idx) == 0:\n        return 0.0\n    return pxx[target] / pxx[idx].mean()\n\n\ndef epoch_snr_features(epoch, fs):\n    feats = []\n    for ch in range(epoch.shape[0]):\n        ff, pxx = channel_psd(epoch[ch], fs)\n        for f in STIM_FREQS:\n            for h in HARMONICS:\n                feats.append(snr_at(ff, pxx, h * f))\n    return np.array(feats)\n\n\nsnr_matrix = np.stack([epoch_snr_features(epochs[i], fs) for i in range(len(epochs))])\nprint(f\"snr_matrix shape: {snr_matrix.shape}\")\n\nsnr_matrix shape: (20, 64)\n\n\n\nsorted_snr = snr_matrix[order]\n\nfig, ax = plt.subplots(figsize=(13, 5))\nim = ax.imshow(sorted_snr, aspect=\"auto\", origin=\"upper\", cmap=\"viridis\")\nfor i in range(1, len(group_labels)):\n    ax.axvline(i * n_per_block - 0.5, color=\"white\", lw=0.8)\nfor r in class_changes:\n    ax.axhline(r, color=\"white\", lw=0.8)\nax.set_xticks([i * n_per_block + n_per_block / 2 - 0.5 for i in range(len(group_labels))])\nax.set_xticklabels(group_labels)\nax.set_xlabel(\"Feature group  (eight channels sampled at each frequency)\")\nax.set_yticks(yt)\nax.set_yticklabels([f\"{c} Hz\" for c in sorted(set(sorted_labels))])\nax.set_ylabel(\"Trial class (5 trials each)\")\nfig.colorbar(im, ax=ax, label=\"SNR\")\nfig.tight_layout()\nfig.savefig(\"images/05-spectral-features_snr_matrix.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 5.4: SNR feature matrix — same layout, but each cell is power at the target bin divided by mean power in adjacent bins.\n\n\n\n\n\nThe contrast sharpens. The brightest cells in each row are now even more concentrated in the column corresponding to that trial’s stimulation frequency, and the cross-class noise (especially in the 12/15 Hz blocks) drops away. SNR features are what we’ll feed to the classifier in Ch 7. The next chapter (Ch 6) develops a different family of features — template matching with CCA — that doesn’t need to commit to specific harmonics in advance.",
+    "crumbs": [
+      "Feature Engineering",
+      "<span class='chapter-number'>5</span>  <span class='chapter-title'>Spectral Features</span>"
+    ]
+  },
+  {
+    "objectID": "06-template-features.html",
+    "href": "06-template-features.html",
+    "title": "6  Template Features: CCA and FBCCA",
+    "section": "",
+    "text": "6.1 Setup: load, filter, epoch\nSame pipeline as Ch 4 + 5; reproduced here so the chapter is self-contained.\nfrom pathlib import Path\nimport numpy as np\nimport scipy.io\nimport matplotlib.pyplot as plt\nfrom scipy.signal import butter, filtfilt, iirnotch\nfrom sklearn.cross_decomposition import CCA\n\nDATA_DIR = Path(\"data\")\nSTIM_FREQS = [9, 10, 12, 15]\nN_HARMONICS = 2\n\nmat = scipy.io.loadmat(DATA_DIR / \"subject_2_fvep_led_training_2.mat\")\nfs = int(mat[\"fs\"][0, 0])\ny = mat[\"y\"]\n\n\ndef make_filters(fs, low=5.0, high=40.0, line=50.0, order=4, notch_q=30):\n    bp_b, bp_a = butter(order, [low, high], btype=\"band\", fs=fs)\n    n_b, n_a = iirnotch(line, notch_q, fs=fs)\n    return (bp_b, bp_a), (n_b, n_a)\n\n\ndef apply_filters(x, bp, notch):\n    return filtfilt(*notch, filtfilt(*bp, x))\n\n\ndef find_trials(y):\n    ch10 = y[9].astype(int)\n    active = (ch10 != 0).astype(int)\n    diff = np.diff(active)\n    starts = np.where(diff == 1)[0] + 1\n    ends = np.where(diff == -1)[0] + 1\n    return [(int(s), int(e), int(ch10[s])) for s, e in zip(starts, ends)]\n\n\nbp, notch = make_filters(fs)\ny_filt = y.astype(float).copy()\nfor ci in range(1, 9):\n    y_filt[ci] = apply_filters(y[ci], bp, notch)\n\ntrials = find_trials(y)\nn_samples = trials[0][1] - trials[0][0]\nepochs = np.stack([y_filt[1:9, s:s + n_samples] for s, _, _ in trials])\nlabels = np.array([fr for _, _, fr in trials])\nprint(f\"epochs: {epochs.shape}, labels: {labels.shape}\")\n\nepochs: (20, 8, 1883), labels: (20,)",
+    "crumbs": [
+      "Feature Engineering",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Template Features: CCA and FBCCA</span>"
+    ]
+  },
+  {
+    "objectID": "06-template-features.html#reference-templates",
+    "href": "06-template-features.html#reference-templates",
+    "title": "6  Template Features: CCA and FBCCA",
+    "section": "6.2 Reference templates",
+    "text": "6.2 Reference templates\nFor each candidate stimulation frequency f, we build a synthetic reference signal — a small set of sines and cosines at f and its harmonics, sampled at the same length and rate as one epoch. CCA will then ask: which linear combination of the eight EEG channels correlates best with which linear combination of these reference signals?\n\ndef build_template(freq, n_samples, fs, n_harmonics=N_HARMONICS):\n    \"\"\"Return (n_samples, 2 * n_harmonics) array of sin/cos at freq, 2·freq, ...\"\"\"\n    t = np.arange(n_samples) / fs\n    refs = []\n    for h in range(1, n_harmonics + 1):\n        refs.append(np.sin(2 * np.pi * h * freq * t))\n        refs.append(np.cos(2 * np.pi * h * freq * t))\n    return np.stack(refs, axis=1)\n\n\ntemplate_9 = build_template(9, n_samples, fs)\nt = np.arange(n_samples) / fs\n\nfig, ax = plt.subplots(figsize=(11, 3))\nlabels_t = [\"sin(2π·9·t)\", \"cos(2π·9·t)\", \"sin(2π·18·t)\", \"cos(2π·18·t)\"]\nfor i, lab in enumerate(labels_t):\n    ax.plot(t, template_9[:, i] - i * 2.5, lw=0.9, label=lab)\nax.set_xlim(0, 1)\nax.set_yticks([])\nax.set_xlabel(\"Time (s)\")\nax.set_title(\"9 Hz template — first 1 s\")\nax.legend(loc=\"upper right\", ncol=4, fontsize=8)\nfig.tight_layout()\nfig.savefig(\"images/06-template-features_template.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 6.1: Reference template for the 9 Hz class — fundamental sin/cos plus second-harmonic sin/cos. First 1 second only, for legibility.\n\n\n\n\n\nThe template is deterministic — there’s no data here, just synthetic sines and cosines at 9 Hz and 18 Hz. CCA’s job is to find the best alignment between this template and the noisy 8-channel EEG; the strength of that alignment is the score for the “9 Hz” class. Including the harmonic in the template lets CCA pick up the same SSVEP information we sampled with the 2× features in Ch 5 — but here it’s done via correlation, which is sensitive to phase, not just power.",
+    "crumbs": [
+      "Feature Engineering",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Template Features: CCA and FBCCA</span>"
+    ]
+  },
+  {
+    "objectID": "06-template-features.html#scoring-an-epoch-with-cca",
+    "href": "06-template-features.html#scoring-an-epoch-with-cca",
+    "title": "6  Template Features: CCA and FBCCA",
+    "section": "6.3 Scoring an epoch with CCA",
+    "text": "6.3 Scoring an epoch with CCA\nCanonical correlation analysis finds the linear projection of the EEG channels and the linear projection of the template that are maximally correlated. We use only the largest canonical correlation (the first component) as the per-class score.\n\ndef cca_score(X, Y):\n    \"\"\"Largest canonical correlation between X (n_samples, n_x) and Y (n_samples, n_y).\"\"\"\n    cca = CCA(n_components=1, max_iter=500)\n    cca.fit(X, Y)\n    Xc, Yc = cca.transform(X, Y)\n    return float(np.corrcoef(Xc.ravel(), Yc.ravel())[0, 1])\n\n\ndef cca_class_scores(epoch, fs, freqs=STIM_FREQS, n_harmonics=N_HARMONICS):\n    X = epoch.T  # (n_samples, n_channels)\n    n_samples = X.shape[0]\n    return np.array([cca_score(X, build_template(f, n_samples, fs, n_harmonics))\n                     for f in freqs])\n\n\nti = 6\nscores = cca_class_scores(epochs[ti], fs)\ntrue_label = labels[ti]\ncolors = [\"lightgray\"] * 4\ncolors[STIM_FREQS.index(true_label)] = \"C2\"\n\nfig, ax = plt.subplots(figsize=(7, 3.5))\nbars = ax.bar([f\"{f} Hz\" for f in STIM_FREQS], scores, color=colors)\nfor bar, s in zip(bars, scores):\n    ax.text(bar.get_x() + bar.get_width() / 2, s + 0.01, f\"{s:.3f}\", ha=\"center\", fontsize=9)\nax.set_ylim(0, max(scores) * 1.15)\nax.set_ylabel(\"Canonical correlation\")\nax.set_xlabel(\"Candidate class\")\nax.set_title(f\"Trial {ti} — true class is {true_label} Hz (green)\")\nfig.tight_layout()\nfig.savefig(\"images/06-template-features_cca_scores.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 6.2: Per-class CCA scores for trial 6 — a 10 Hz trial. The true class wins by a comfortable margin.\n\n\n\n\n\nThe 10 Hz template wins (correlation ≈ 0.51) while the other three classes hover around 0.18–0.21. The decision rule is simple: pick the class whose template correlates most. No feature vector, no normalization, no neighborhood logic — just four scalars per trial.",
+    "crumbs": [
+      "Feature Engineering",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Template Features: CCA and FBCCA</span>"
+    ]
+  },
+  {
+    "objectID": "06-template-features.html#all-trials-all-classes",
+    "href": "06-template-features.html#all-trials-all-classes",
+    "title": "6  Template Features: CCA and FBCCA",
+    "section": "6.4 All trials, all classes",
+    "text": "6.4 All trials, all classes\n\nscore_mat = np.stack([cca_class_scores(ep, fs) for ep in epochs])\norder = np.lexsort((np.arange(len(labels)), labels))\nsorted_scores = score_mat[order]\nsorted_labels = labels[order]\n\nfig, ax = plt.subplots(figsize=(7, 6))\nim = ax.imshow(sorted_scores, aspect=\"auto\", origin=\"upper\", cmap=\"viridis\")\nfor r in np.where(np.diff(sorted_labels) != 0)[0] + 0.5:\n    ax.axhline(r, color=\"white\", lw=0.8)\nax.set_xticks(range(4))\nax.set_xticklabels([f\"{f} Hz\" for f in STIM_FREQS])\nax.set_xlabel(\"Candidate class\")\nyt = [np.where(sorted_labels == c)[0].mean() for c in sorted(set(sorted_labels))]\nax.set_yticks(yt)\nax.set_yticklabels([f\"{c} Hz\" for c in sorted(set(sorted_labels))])\nax.set_ylabel(\"Trial class (5 trials each)\")\nfig.colorbar(im, ax=ax, label=\"Canonical correlation\")\nfig.tight_layout()\nfig.savefig(\"images/06-template-features_cca_matrix.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\npredictions = np.array([STIM_FREQS[i] for i in score_mat.argmax(axis=1)])\naccuracy = (predictions == labels).mean()\nn_correct = (predictions == labels).sum()\nprint(f\"Plain CCA argmax accuracy: {n_correct}/{len(labels)} = {accuracy:.0%}\")\n\n\n\n\n\n\n\nFigure 6.3: CCA scores for every (trial, candidate) pair. Rows are trials sorted by class. The brightest cell in each row should sit in the column matching that trial’s class.\n\n\n\n\n\nPlain CCA argmax accuracy: 18/20 = 90%\n\n\n90 % accuracy from a method that needed no training data. The two errors (visible in the heatmap as off-diagonal-block bright cells) are both 12 Hz trials confused with 9 or 10 Hz — the same alpha-overlap pattern we’ve been tracking since Ch 2. CCA partially handles alpha because it cares about the phase alignment between EEG and a 12 Hz template, not just the amount of 12 Hz power; but when alpha sits next to the stim frequency and the SSVEP response is weak, the alpha-driven channel mixture can correlate better with the wrong template.",
+    "crumbs": [
+      "Feature Engineering",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Template Features: CCA and FBCCA</span>"
+    ]
+  },
+  {
+    "objectID": "06-template-features.html#filter-bank-cca",
+    "href": "06-template-features.html#filter-bank-cca",
+    "title": "6  Template Features: CCA and FBCCA",
+    "section": "6.5 Filter-bank CCA",
+    "text": "6.5 Filter-bank CCA\nThe standard fix is FBCCA: split the filtered EEG into multiple sub-bands, run CCA per sub-band against the same templates, and combine the per-band correlations into a single score per class. Each sub-band isolates one harmonic family — the lowest band sees the fundamental, the next band sees the second harmonic, and so on — so CCA in each band can lock onto its target without being washed out by the others.\n\nSUB_BANDS = [(6, 14), (14, 22), (22, 30), (30, 40)]\nFBCCA_A, FBCCA_B = 1.25, 0.25  # Chen et al. 2015 weighting parameters\n\n\ndef fbcca_class_scores(epoch, fs, freqs=STIM_FREQS, sub_bands=SUB_BANDS,\n                       a=FBCCA_A, b=FBCCA_B, n_harmonics=N_HARMONICS):\n    n_samples = epoch.shape[1]\n    weights = np.array([(i + 1) ** -a + b for i in range(len(sub_bands))])\n\n    band_signals = []\n    for low, high in sub_bands:\n        b_, a_ = butter(4, [low, high], btype=\"band\", fs=fs)\n        band_signals.append(filtfilt(b_, a_, epoch, axis=-1))\n\n    scores = np.zeros(len(freqs))\n    for fi, freq in enumerate(freqs):\n        Y = build_template(freq, n_samples, fs, n_harmonics)\n        for bi, signal in enumerate(band_signals):\n            r = cca_score(signal.T, Y)\n            scores[fi] += weights[bi] * r ** 2\n    return scores\n\n\nti = 9\ncca_s = cca_class_scores(epochs[ti], fs)\nfb_s = fbcca_class_scores(epochs[ti], fs)\ntrue_label = labels[ti]\n\ncca_n = cca_s / cca_s.max()\nfb_n = fb_s / fb_s.max()\nxpos = np.arange(len(STIM_FREQS))\nw = 0.4\n\nfig, ax = plt.subplots(figsize=(8, 3.8))\nax.bar(xpos - w / 2, cca_n, w, label=\"CCA\", color=\"C0\")\nax.bar(xpos + w / 2, fb_n, w, label=\"FBCCA\", color=\"C1\")\ntrue_idx = STIM_FREQS.index(true_label)\nax.axvline(true_idx, color=\"C2\", ls=\"--\", alpha=0.6, label=f\"true = {true_label} Hz\")\nax.set_xticks(xpos)\nax.set_xticklabels([f\"{f} Hz\" for f in STIM_FREQS])\nax.set_ylabel(\"Score (normalized to max)\")\nax.set_xlabel(\"Candidate class\")\nax.set_title(f\"Trial {ti} — CCA vs FBCCA\")\nax.legend()\nfig.tight_layout()\nfig.savefig(\"images/06-template-features_fbcca.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\nprint(f\"Trial {ti} (true = {true_label} Hz):\")\nprint(f\"  CCA   scores: {dict(zip(STIM_FREQS, cca_s.round(3)))} → pick {STIM_FREQS[cca_s.argmax()]}\")\nprint(f\"  FBCCA scores: {dict(zip(STIM_FREQS, fb_s.round(3)))} → pick {STIM_FREQS[fb_s.argmax()]}\")\n\n\n\n\n\n\n\nFigure 6.4: Per-class scores for one of the trials plain CCA gets wrong — trial 9 (true class: 12 Hz). Both methods are normalized to their own max for visual comparison. Plain CCA narrowly picks 9 Hz; FBCCA shifts the win to the correct 12 Hz.\n\n\n\n\n\nTrial 9 (true = 12 Hz):\n  CCA   scores: {9: np.float64(0.337), 10: np.float64(0.232), 12: np.float64(0.335), 15: np.float64(0.127)} → pick 9\n  FBCCA scores: {9: np.float64(0.364), 10: np.float64(0.239), 12: np.float64(0.405), 15: np.float64(0.131)} → pick 12\n\n\n\nfb_mat = np.stack([fbcca_class_scores(ep, fs) for ep in epochs])\nfb_pred = np.array([STIM_FREQS[i] for i in fb_mat.argmax(axis=1)])\nfb_acc = (fb_pred == labels).mean()\nprint(f\"FBCCA argmax accuracy: {(fb_pred == labels).sum()}/{len(labels)} = {fb_acc:.0%}\")\n\nFBCCA argmax accuracy: 19/20 = 95%\n\n\nFBCCA recovers one extra trial — 19/20 versus CCA’s 18/20 — at the cost of running CCA four times per epoch instead of once. The gain on this small session is modest (the alpha-vs-12-Hz collision is genuinely hard, and one of the two CCA errors persists), but the per-band weighting is tuneable, and on larger SSVEP datasets FBCCA typically pulls a few percentage points ahead. Ch 7 will show that even small score-gap improvements can translate into meaningful ITR (Ch 8) once we factor in trial duration.\nThe two methods give us our two main feature families: PSD-sampled features (Ch 5) — interpretable, easy to inspect — and template-correlation features (this chapter) — phase-aware, training-free per-trial scores. Both go into the classifier in the next chapter.",
+    "crumbs": [
+      "Feature Engineering",
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Template Features: CCA and FBCCA</span>"
+    ]
+  },
+  {
+    "objectID": "07-classification.html",
+    "href": "07-classification.html",
+    "title": "7  From Features to a Class",
+    "section": "",
+    "text": "7.1 Setup\nSame pipeline as the previous chapters, condensed. We end with three things on hand: epochs (the trial tensor), labels (the trigger truth), and y itself (so we can also evaluate the CH11 baseline).\nfrom pathlib import Path\nimport numpy as np\nimport scipy.io\nimport matplotlib.pyplot as plt\nfrom scipy.signal import welch, butter, filtfilt, iirnotch\nfrom sklearn.cross_decomposition import CCA\nfrom sklearn.discriminant_analysis import LinearDiscriminantAnalysis\nfrom sklearn.model_selection import LeaveOneOut\n\nDATA_DIR = Path(\"data\")\nSTIM_FREQS = [9, 10, 12, 15]\nHARMONICS = [1, 2]\nN_HARMONICS = 2\nNPERSEG = 512\nSUB_BANDS = [(6, 14), (14, 22), (22, 30), (30, 40)]\n\nmat = scipy.io.loadmat(DATA_DIR / \"subject_2_fvep_led_training_2.mat\")\nfs = int(mat[\"fs\"][0, 0])\ny = mat[\"y\"]\n\n\ndef make_filters(fs, low=5.0, high=40.0, line=50.0, order=4, notch_q=30):\n    bp_b, bp_a = butter(order, [low, high], btype=\"band\", fs=fs)\n    n_b, n_a = iirnotch(line, notch_q, fs=fs)\n    return (bp_b, bp_a), (n_b, n_a)\n\n\ndef apply_filters(x, bp, notch):\n    return filtfilt(*notch, filtfilt(*bp, x))\n\n\ndef find_trials(y):\n    ch10 = y[9].astype(int)\n    active = (ch10 != 0).astype(int)\n    diff = np.diff(active)\n    starts = np.where(diff == 1)[0] + 1\n    ends = np.where(diff == -1)[0] + 1\n    return [(int(s), int(e), int(ch10[s])) for s, e in zip(starts, ends)]\n\n\nbp, notch = make_filters(fs)\ny_filt = y.astype(float).copy()\nfor ci in range(1, 9):\n    y_filt[ci] = apply_filters(y[ci], bp, notch)\n\ntrials = find_trials(y)\nn_samples = trials[0][1] - trials[0][0]\nepochs = np.stack([y_filt[1:9, s:s + n_samples] for s, _, _ in trials])\nlabels = np.array([fr for _, _, fr in trials])\nprint(f\"epochs: {epochs.shape}, labels: {labels.shape}\")\n\n\ndef confusion_matrix(true, pred, classes):\n    cm = np.zeros((len(classes), len(classes)), dtype=int)\n    for t, p in zip(true, pred):\n        if t in classes and p in classes:\n            cm[classes.index(t), classes.index(p)] += 1\n    return cm\n\n\ndef plot_confusion(cm, classes, title, ax):\n    cm_norm = cm / np.maximum(cm.sum(axis=1, keepdims=True), 1)\n    im = ax.imshow(cm_norm, cmap=\"Blues\", vmin=0, vmax=1)\n    for i in range(len(classes)):\n        for j in range(len(classes)):\n            ax.text(j, i, f\"{cm[i, j]}\", ha=\"center\", va=\"center\",\n                    color=\"white\" if cm_norm[i, j] &gt; 0.5 else \"black\", fontsize=10)\n    ax.set_xticks(range(len(classes)))\n    ax.set_xticklabels([f\"{c}\" for c in classes])\n    ax.set_yticks(range(len(classes)))\n    ax.set_yticklabels([f\"{c}\" for c in classes])\n    ax.set_xlabel(\"Predicted (Hz)\")\n    ax.set_ylabel(\"True (Hz)\")\n    ax.set_title(title)\n    return im\n\nepochs: (20, 8, 1883), labels: (20,)",
+    "crumbs": [
+      "Modelling",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>From Features to a Class</span>"
+    ]
+  },
+  {
+    "objectID": "07-classification.html#cca-argmax-the-no-training-classifier",
+    "href": "07-classification.html#cca-argmax-the-no-training-classifier",
+    "title": "7  From Features to a Class",
+    "section": "7.2 CCA argmax — the no-training classifier",
+    "text": "7.2 CCA argmax — the no-training classifier\nThe four CCA scores from Ch 6 are intrinsically class-comparable: each measures correlation against a known reference, so picking the highest-scoring class needs no training. The feature extractor is the classifier.\n\ndef build_template(freq, n_samples, fs, n_harmonics=N_HARMONICS):\n    t = np.arange(n_samples) / fs\n    refs = []\n    for h in range(1, n_harmonics + 1):\n        refs.append(np.sin(2 * np.pi * h * freq * t))\n        refs.append(np.cos(2 * np.pi * h * freq * t))\n    return np.stack(refs, axis=1)\n\n\ndef cca_score(X, Y):\n    cca = CCA(n_components=1, max_iter=500)\n    cca.fit(X, Y)\n    Xc, Yc = cca.transform(X, Y)\n    return float(np.corrcoef(Xc.ravel(), Yc.ravel())[0, 1])\n\n\ndef cca_class_scores(epoch, fs, freqs=STIM_FREQS):\n    X = epoch.T\n    return np.array([cca_score(X, build_template(f, X.shape[0], fs)) for f in freqs])\n\n\ncca_pred = np.array([STIM_FREQS[cca_class_scores(ep, fs).argmax()] for ep in epochs])\ncca_acc = (cca_pred == labels).mean()\nprint(f\"CCA argmax: {(cca_pred == labels).sum()}/{len(labels)} = {cca_acc:.0%}\")\n\nCCA argmax: 18/20 = 90%\n\n\n\nfig, ax = plt.subplots(figsize=(5, 4))\nplot_confusion(confusion_matrix(labels, cca_pred, STIM_FREQS), STIM_FREQS,\n               f\"CCA argmax — accuracy {cca_acc:.0%}\", ax)\nfig.tight_layout()\nfig.savefig(\"images/07-classification_cca_confusion.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 7.1: CCA-argmax confusion matrix. Cells show trial counts; cell shading is row-normalized (so the diagonal of a perfect classifier would be all-1.0).\n\n\n\n\n\nThe diagonal is mostly clean. The two errors are 12 Hz trials misread as 9 or 10 Hz — the same alpha-overlap pattern from Ch 2. FBCCA from Ch 6 picks up one of those (19/20 = 95 %), and we’ll include it in the head-to-head at the end of the chapter.",
+    "crumbs": [
+      "Modelling",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>From Features to a Class</span>"
+    ]
+  },
+  {
+    "objectID": "07-classification.html#lda-on-spectral-snr-features",
+    "href": "07-classification.html#lda-on-spectral-snr-features",
+    "title": "7  From Features to a Class",
+    "section": "7.3 LDA on spectral SNR features",
+    "text": "7.3 LDA on spectral SNR features\nCCA scores are class-comparable by construction. The spectral SNR features from Ch 5 are not: a row’s “SNR at 9 Hz on Oz” sits in a different coordinate from “SNR at 10 Hz on Oz”, and there’s no a priori reason their absolute values are aligned across trials and classes. A trained classifier learns that mapping. Linear discriminant analysis (LDA) — the same family of model g.tec used to produce CH11 — is the natural baseline.\nWith only 20 trials and 64 features, we cross-validate leave-one-out: for each trial in turn, fit LDA on the other 19 and predict the held-out one.\n\ndef channel_psd(channel, fs, nperseg=NPERSEG):\n    return welch(channel, fs=fs, nperseg=min(nperseg, len(channel)))\n\n\ndef snr_at(ff, pxx, f_target, half_bw_hz=0.6, neigh_hw_hz=2.5):\n    df = ff[1] - ff[0]\n    excl = max(1, int(round(half_bw_hz / df)))\n    half = int(round(neigh_hw_hz / df))\n    target = np.argmin(np.abs(ff - f_target))\n    lo, hi = max(0, target - half), min(len(pxx), target + half + 1)\n    idx = np.arange(lo, hi)\n    idx = idx[np.abs(idx - target) &gt; excl]\n    return pxx[target] / pxx[idx].mean() if len(idx) else 0.0\n\n\ndef epoch_snr_features(epoch, fs):\n    feats = []\n    for ch in range(epoch.shape[0]):\n        ff, pxx = channel_psd(epoch[ch], fs)\n        for f in STIM_FREQS:\n            for h in HARMONICS:\n                feats.append(snr_at(ff, pxx, h * f))\n    return np.array(feats)\n\n\nX_snr = np.stack([epoch_snr_features(ep, fs) for ep in epochs])\nprint(f\"X_snr: {X_snr.shape}  (n_trials, n_features)\")\n\nloo = LeaveOneOut()\nlda_pred = np.zeros_like(labels)\nfor tr, te in loo.split(X_snr):\n    lda = LinearDiscriminantAnalysis()\n    lda.fit(X_snr[tr], labels[tr])\n    lda_pred[te] = lda.predict(X_snr[te])\n\nlda_acc = (lda_pred == labels).mean()\nprint(f\"LDA on SNR features (LOO): {(lda_pred == labels).sum()}/{len(labels)} = {lda_acc:.0%}\")\n\nX_snr: (20, 64)  (n_trials, n_features)\nLDA on SNR features (LOO): 11/20 = 55%\n\n\n\nfig, ax = plt.subplots(figsize=(5, 4))\nplot_confusion(confusion_matrix(labels, lda_pred, STIM_FREQS), STIM_FREQS,\n               f\"LDA on SNR — accuracy {lda_acc:.0%}\", ax)\nfig.tight_layout()\nfig.savefig(\"images/07-classification_lda_confusion.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 7.2: LDA on SNR features — leave-one-out predictions.\n\n\n\n\n\nA long way short of CCA’s 90 %. With 64 features and only 19 training samples in each LOO fold, LDA is severely underdetermined — there are more features than samples, so the within-class covariance can’t be estimated reliably. The model is also blind to the phase information that CCA captures by construction. More features and more aggressive regularization could close some of the gap, but the core issue is that a generic classifier on top of a generic feature vector throws away the structure CCA exploits for free.",
+    "crumbs": [
+      "Modelling",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>From Features to a Class</span>"
+    ]
+  },
+  {
+    "objectID": "07-classification.html#the-ch11-baseline",
+    "href": "07-classification.html#the-ch11-baseline",
+    "title": "7  From Features to a Class",
+    "section": "7.4 The CH11 baseline",
+    "text": "7.4 The CH11 baseline\nCH11 is the LDA-class index that g.tec’s analysis tool wrote into the dataset at recording time — our shipped baseline. It fires intermittently (only when its confidence crosses a threshold), so per-trial prediction is the mode of the non-zero values within the trial window. The class indices map to frequencies via the parameters panel from Ch 1: 1 → 15 Hz, 2 → 12, 3 → 10, 4 → 9.\n\nCH11_TO_HZ = {1: 15, 2: 12, 3: 10, 4: 9}\n\n\ndef ch11_predict(y, trials):\n    ch11 = y[10].astype(int)\n    preds = []\n    for s, e, _ in trials:\n        non_zero = ch11[s:e][ch11[s:e] != 0]\n        if len(non_zero) == 0:\n            preds.append(-1)  # no decision\n        else:\n            values, counts = np.unique(non_zero, return_counts=True)\n            preds.append(CH11_TO_HZ.get(int(values[counts.argmax()]), -1))\n    return np.array(preds)\n\n\nch11_pred = ch11_predict(y, trials)\nch11_acc = (ch11_pred == labels).mean()\nprint(f\"CH11 (mode of non-zero samples): {(ch11_pred == labels).sum()}/{len(labels)} = {ch11_acc:.0%}\")\n\nCH11 (mode of non-zero samples): 11/20 = 55%\n\n\n\nfig, ax = plt.subplots(figsize=(5, 4))\nplot_confusion(confusion_matrix(labels, ch11_pred, STIM_FREQS), STIM_FREQS,\n               f\"CH11 — accuracy {ch11_acc:.0%}\", ax)\nfig.tight_layout()\nfig.savefig(\"images/07-classification_ch11_confusion.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 7.3: CH11 baseline — per-trial mode of non-zero samples.\n\n\n\n\n\nCH11’s confusion matrix has a striking pattern: it falls back to 9 Hz for a lot of trials, regardless of the true class. The 9 Hz row is mostly correct (high recall for 9 Hz), but 10, 12, and 15 Hz rows leak heavily into the 9 Hz column (low precision elsewhere). Whatever the parameters g.tec used, the LDA on this session was strongly biased toward class 4. Worth noting: this is the same tool that produced a 100 %-stuck-on-class-3 baseline for subject_1_fvep_led_training_1 (Ch 1) — the g.tec analysis tool’s behaviour is brittle in ways that shipping it as a “result” obscures.",
+    "crumbs": [
+      "Modelling",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>From Features to a Class</span>"
+    ]
+  },
+  {
+    "objectID": "07-classification.html#three-way-comparison",
+    "href": "07-classification.html#three-way-comparison",
+    "title": "7  From Features to a Class",
+    "section": "7.5 Three-way comparison",
+    "text": "7.5 Three-way comparison\n\ndef fbcca_class_scores(epoch, fs, freqs=STIM_FREQS, sub_bands=SUB_BANDS,\n                       a=1.25, b=0.25, n_harmonics=N_HARMONICS):\n    n_samples = epoch.shape[1]\n    weights = np.array([(i + 1) ** -a + b for i in range(len(sub_bands))])\n    band_signals = []\n    for low, high in sub_bands:\n        b_, a_ = butter(4, [low, high], btype=\"band\", fs=fs)\n        band_signals.append(filtfilt(b_, a_, epoch, axis=-1))\n    scores = np.zeros(len(freqs))\n    for fi, freq in enumerate(freqs):\n        Y = build_template(freq, n_samples, fs, n_harmonics)\n        for bi, sig in enumerate(band_signals):\n            scores[fi] += weights[bi] * cca_score(sig.T, Y) ** 2\n    return scores\n\n\nfbcca_pred = np.array([STIM_FREQS[fbcca_class_scores(ep, fs).argmax()] for ep in epochs])\nfbcca_acc = (fbcca_pred == labels).mean()\n\nmethods = [\"CH11\", \"LDA on SNR\", \"CCA argmax\", \"FBCCA argmax\"]\naccs = [ch11_acc, lda_acc, cca_acc, fbcca_acc]\nprint({m: f\"{a:.0%}\" for m, a in zip(methods, accs)})\n\n{'CH11': '55%', 'LDA on SNR': '55%', 'CCA argmax': '90%', 'FBCCA argmax': '95%'}\n\n\n\ncolors = [\"lightgray\", \"lightgray\", \"C2\", \"C2\"]\nfig, ax = plt.subplots(figsize=(8, 4))\nbars = ax.bar(methods, accs, color=colors)\nfor bar, a in zip(bars, accs):\n    ax.text(bar.get_x() + bar.get_width() / 2, a + 0.02, f\"{a:.0%}\",\n            ha=\"center\", fontsize=10)\nax.axhline(0.25, color=\"C3\", ls=\"--\", alpha=0.5, label=\"chance (25 %)\")\nax.set_ylim(0, 1.05)\nax.set_ylabel(\"Accuracy\")\nax.set_title(\"Classifier comparison — running session\")\nax.legend(loc=\"upper left\")\nfig.tight_layout()\nfig.savefig(\"images/07-classification_comparison.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 7.4: Per-trial accuracy across four classifiers on the running session (20 trials, chance = 25 %).\n\n\n\n\n\nTwo methods that match the structure of the SSVEP signal — CCA argmax and FBCCA argmax — clear 90 % with no training. Two methods that don’t — generic LDA on amplitude features, and the shipped CH11 LDA — sit roughly tied in the mid-50s, only modestly above chance. The lesson is the SSVEP literature’s main empirical finding: feature engineering that bakes in the physics of the response (narrowband, phase-locked, harmonic) lets a trivial classifier win. The “model” is the template; the argmax is a formality.\nWhat we haven’t yet asked: how short can we make the epoch and still keep these accuracies? That’s Ch 8.",
+    "crumbs": [
+      "Modelling",
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>From Features to a Class</span>"
+    ]
+  },
+  {
+    "objectID": "08-time-accuracy-itr.html",
+    "href": "08-time-accuracy-itr.html",
+    "title": "8  Time, Accuracy, and Information Transfer Rate",
+    "section": "",
+    "text": "8.1 Setup\nThe same load → filter → epoch pipeline as the last few chapters. The epoch tensor is (20, 8, 1884) — 7.36 s per trial. To study epoch-length effects, we’ll truncate that third axis and re-run the classifier.\nfrom pathlib import Path\nimport numpy as np\nimport scipy.io\nimport matplotlib.pyplot as plt\nfrom scipy.signal import butter, filtfilt, iirnotch\nfrom sklearn.cross_decomposition import CCA\n\nDATA_DIR = Path(\"data\")\nSTIM_FREQS = [9, 10, 12, 15]\nN_HARMONICS = 2\nSUB_BANDS = [(6, 14), (14, 22), (22, 30), (30, 40)]\n\nmat = scipy.io.loadmat(DATA_DIR / \"subject_2_fvep_led_training_2.mat\")\nfs = int(mat[\"fs\"][0, 0])\ny = mat[\"y\"]\n\n\ndef make_filters(fs, low=5.0, high=40.0, line=50.0, order=4, notch_q=30):\n    bp_b, bp_a = butter(order, [low, high], btype=\"band\", fs=fs)\n    n_b, n_a = iirnotch(line, notch_q, fs=fs)\n    return (bp_b, bp_a), (n_b, n_a)\n\n\ndef apply_filters(x, bp, notch):\n    return filtfilt(*notch, filtfilt(*bp, x))\n\n\ndef find_trials(y):\n    ch10 = y[9].astype(int)\n    active = (ch10 != 0).astype(int)\n    diff = np.diff(active)\n    starts = np.where(diff == 1)[0] + 1\n    ends = np.where(diff == -1)[0] + 1\n    return [(int(s), int(e), int(ch10[s])) for s, e in zip(starts, ends)]\n\n\ndef build_template(freq, n_samples, fs, n_harmonics=N_HARMONICS):\n    t = np.arange(n_samples) / fs\n    refs = []\n    for h in range(1, n_harmonics + 1):\n        refs.append(np.sin(2 * np.pi * h * freq * t))\n        refs.append(np.cos(2 * np.pi * h * freq * t))\n    return np.stack(refs, axis=1)\n\n\ndef cca_score(X, Y):\n    cca = CCA(n_components=1, max_iter=500)\n    cca.fit(X, Y)\n    Xc, Yc = cca.transform(X, Y)\n    return float(np.corrcoef(Xc.ravel(), Yc.ravel())[0, 1])\n\n\ndef cca_predict(epoch, fs):\n    n = epoch.shape[1]\n    scores = [cca_score(epoch.T, build_template(f, n, fs)) for f in STIM_FREQS]\n    return STIM_FREQS[int(np.argmax(scores))]\n\n\ndef fbcca_predict(epoch, fs, sub_bands=SUB_BANDS, a=1.25, b=0.25):\n    n = epoch.shape[1]\n    weights = np.array([(i + 1) ** -a + b for i in range(len(sub_bands))])\n    band_signals = []\n    for low, high in sub_bands:\n        b_, a_ = butter(4, [low, high], btype=\"band\", fs=fs)\n        band_signals.append(filtfilt(b_, a_, epoch, axis=-1))\n    scores = np.zeros(len(STIM_FREQS))\n    for fi, freq in enumerate(STIM_FREQS):\n        Y = build_template(freq, n, fs)\n        for bi, sig in enumerate(band_signals):\n            scores[fi] += weights[bi] * cca_score(sig.T, Y) ** 2\n    return STIM_FREQS[int(np.argmax(scores))]\n\n\nbp, notch = make_filters(fs)\ny_filt = y.astype(float).copy()\nfor ci in range(1, 9):\n    y_filt[ci] = apply_filters(y[ci], bp, notch)\n\ntrials = find_trials(y)\nn_samples_full = trials[0][1] - trials[0][0]\nepochs = np.stack([y_filt[1:9, s:s + n_samples_full] for s, _, _ in trials])\nlabels = np.array([fr for _, _, fr in trials])\nprint(f\"epochs: {epochs.shape}, full trial = {n_samples_full / fs:.2f} s\")\n\nepochs: (20, 8, 1883), full trial = 7.36 s",
+    "crumbs": [
+      "Evaluation",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Time, Accuracy, and Information Transfer Rate</span>"
+    ]
+  },
+  {
+    "objectID": "08-time-accuracy-itr.html#accuracy-as-a-function-of-epoch-length",
+    "href": "08-time-accuracy-itr.html#accuracy-as-a-function-of-epoch-length",
+    "title": "8  Time, Accuracy, and Information Transfer Rate",
+    "section": "8.2 Accuracy as a function of epoch length",
+    "text": "8.2 Accuracy as a function of epoch length\nFor each candidate epoch length L, take the first L seconds of every trial and re-run the classifier. The trials are 7.36 s, so we sweep from 1 s up to 7 s in 0.5-s steps.\n\nWINDOW_LENGTHS = np.arange(1.0, 7.5, 0.5)\n\n\ndef sweep_accuracy(epochs, labels, fs, predict_fn, lengths):\n    accs = []\n    for L in lengths:\n        n_L = int(L * fs)\n        truncated = epochs[:, :, :n_L]\n        preds = np.array([predict_fn(ep, fs) for ep in truncated])\n        accs.append((preds == labels).mean())\n    return np.array(accs)\n\n\ncca_accs = sweep_accuracy(epochs, labels, fs, cca_predict, WINDOW_LENGTHS)\nfbcca_accs = sweep_accuracy(epochs, labels, fs, fbcca_predict, WINDOW_LENGTHS)\n\n\nfig, ax = plt.subplots(figsize=(10, 4.5))\nax.plot(WINDOW_LENGTHS, cca_accs, \"o-\", label=\"CCA argmax\", lw=1.5, color=\"C0\")\nax.plot(WINDOW_LENGTHS, fbcca_accs, \"s-\", label=\"FBCCA argmax\", lw=1.5, color=\"C2\")\nax.axhline(0.25, color=\"C3\", ls=\"--\", alpha=0.5, label=\"chance (25 %)\")\nax.set_xlabel(\"Epoch length (s)\")\nax.set_ylabel(\"Accuracy\")\nax.set_ylim(0, 1.05)\nax.set_title(\"Accuracy vs epoch length — running session\")\nax.legend()\nax.grid(alpha=0.3)\nfig.tight_layout()\nfig.savefig(\"images/08-time-accuracy-itr_accuracy.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 8.1: Per-trial accuracy as a function of epoch length, on the running session (20 trials).\n\n\n\n\n\nBoth curves rise from the high-50s at 1 s up to ~90–95 % at 7 s. The shape is what we’d expect: more cycles of the stimulus inside the window means a sharper template-correlation, which means cleaner discrimination. The curves are bumpy because each step is computed from only 20 trials — a single misclassification flips the line by 5 %. With more trials the curve would smooth into the classic monotone rise. The shape closely resembles data/subject_1_fvep_led_training_1_result2d.PNG, the analogous accuracy-vs-window plot from g.tec’s analysis tool.",
+    "crumbs": [
+      "Evaluation",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Time, Accuracy, and Information Transfer Rate</span>"
+    ]
+  },
+  {
+    "objectID": "08-time-accuracy-itr.html#the-wolpaw-information-transfer-rate",
+    "href": "08-time-accuracy-itr.html#the-wolpaw-information-transfer-rate",
+    "title": "8  Time, Accuracy, and Information Transfer Rate",
+    "section": "8.3 The Wolpaw Information Transfer Rate",
+    "text": "8.3 The Wolpaw Information Transfer Rate\nAccuracy answers “how often is the classifier right?” but a usable BCI also has to be fast. A keyboard that’s 99 % accurate but takes a minute per character is worse than one that’s 80 % accurate at 2 seconds. The Wolpaw ITR captures this combined “bandwidth in bits per minute”:\n\\[\n\\text{ITR} = \\left[\\log_2 N + p \\log_2 p + (1-p) \\log_2 \\frac{1-p}{N-1}\\right] \\cdot \\frac{60}{T}\n\\]\nwhere N is the number of classes, p is the per-trial accuracy, and T is the time per decision in seconds. The bracketed term is the per-trial information in bits — it’s log2(N) (here, 2 bits) when p = 1, drops to 0 at chance (p = 1/N), and is undefined-but-zero in the corners. Multiplying by 60/T converts to bits-per-minute.\n\ndef wolpaw_itr(p, N, T):\n    \"\"\"ITR in bits/minute. p=accuracy, N=number of classes, T=time per decision (s).\"\"\"\n    p = np.asarray(p, dtype=float)\n    bits = np.zeros_like(p)\n    perfect = p &gt;= 1.0\n    chance_or_worse = p &lt;= 1.0 / N\n    middle = ~(perfect | chance_or_worse)\n    bits[perfect] = np.log2(N)\n    bits[middle] = (np.log2(N) + p[middle] * np.log2(p[middle])\n                    + (1 - p[middle]) * np.log2((1 - p[middle]) / (N - 1)))\n    return bits * 60.0 / T\n\n\n# Worked example\nprint(f\"  p = 0.95 at T = 7 s: ITR = {wolpaw_itr(np.array([0.95]), 4, 7)[0]:.1f} bits/min\")\nprint(f\"  p = 0.65 at T = 2 s: ITR = {wolpaw_itr(np.array([0.65]), 4, 2)[0]:.1f} bits/min\")\nprint(f\"  p = 0.50 at T = 1 s: ITR = {wolpaw_itr(np.array([0.50]), 4, 1)[0]:.1f} bits/min\")\n\n  p = 0.95 at T = 7 s: ITR = 14.0 bits/min\n  p = 0.65 at T = 2 s: ITR = 15.3 bits/min\n  p = 0.50 at T = 1 s: ITR = 12.5 bits/min\n\n\nThe 65 %-at-2 s version delivers more usable bandwidth than the 95 %-at-7 s version — even though the latter is far more accurate per decision, the 7-s wait means fewer decisions per minute. That tradeoff is the point of the metric.",
+    "crumbs": [
+      "Evaluation",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Time, Accuracy, and Information Transfer Rate</span>"
+    ]
+  },
+  {
+    "objectID": "08-time-accuracy-itr.html#itr-as-a-function-of-epoch-length",
+    "href": "08-time-accuracy-itr.html#itr-as-a-function-of-epoch-length",
+    "title": "8  Time, Accuracy, and Information Transfer Rate",
+    "section": "8.4 ITR as a function of epoch length",
+    "text": "8.4 ITR as a function of epoch length\nApply the formula at every window length we already swept, using T equal to the epoch length itself (i.e., assuming negligible processing delay between epochs).\n\ncca_itr = wolpaw_itr(cca_accs, N=4, T=WINDOW_LENGTHS)\nfbcca_itr = wolpaw_itr(fbcca_accs, N=4, T=WINDOW_LENGTHS)\n\n\nfig, ax = plt.subplots(figsize=(10, 4.5))\nax.plot(WINDOW_LENGTHS, cca_itr, \"o-\", label=\"CCA argmax\", lw=1.5, color=\"C0\")\nax.plot(WINDOW_LENGTHS, fbcca_itr, \"s-\", label=\"FBCCA argmax\", lw=1.5, color=\"C2\")\nax.set_xlabel(\"Epoch length (s)\")\nax.set_ylabel(\"ITR (bits/min)\")\nax.set_title(\"Information Transfer Rate vs epoch length\")\nax.legend()\nax.grid(alpha=0.3)\nfig.tight_layout()\nfig.savefig(\"images/08-time-accuracy-itr_itr.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\ndef best_point(lengths, itrs, accs, name):\n    i = int(np.argmax(itrs))\n    return f\"  {name}: peak ITR = {itrs[i]:.1f} bits/min at T = {lengths[i]:.1f} s (accuracy {accs[i]:.0%})\"\n\n\nprint(best_point(WINDOW_LENGTHS, cca_itr, cca_accs, \"CCA  \"))\nprint(best_point(WINDOW_LENGTHS, fbcca_itr, fbcca_accs, \"FBCCA\"))\nprint(f\"  Compare full-trial: CCA = {cca_itr[-1]:.1f} bits/min, FBCCA = {fbcca_itr[-1]:.1f} bits/min \"\n      f\"(at T = {WINDOW_LENGTHS[-1]:.1f} s, accuracies {cca_accs[-1]:.0%} / {fbcca_accs[-1]:.0%})\")\n\n\n\n\n\n\n\nFigure 8.2: Information Transfer Rate (bits/min) as a function of epoch length. The peak sits well below the accuracy plateau.\n\n\n\n\n\n  CCA  : peak ITR = 15.3 bits/min at T = 2.0 s (accuracy 65%)\n  FBCCA: peak ITR = 15.1 bits/min at T = 6.5 s (accuracy 95%)\n  Compare full-trial: CCA = 11.8 bits/min, FBCCA = 14.0 bits/min (at T = 7.0 s, accuracies 90% / 95%)\n\n\nThe peak ITR sits at a much shorter epoch than the accuracy maximum — typically in the 2–3 s range on this session, depending on which classifier you pick and how the per-length curve happens to wobble with only 20 trials. The full-trial 7 s decisions are more accurate but deliver less usable information per minute. That’s the central tradeoff: shipping a real SSVEP BCI almost always means cutting the epoch short of where the accuracy curve plateaus.",
+    "crumbs": [
+      "Evaluation",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Time, Accuracy, and Information Transfer Rate</span>"
+    ]
+  },
+  {
+    "objectID": "08-time-accuracy-itr.html#what-this-means-for-the-bci",
+    "href": "08-time-accuracy-itr.html#what-this-means-for-the-bci",
+    "title": "8  Time, Accuracy, and Information Transfer Rate",
+    "section": "8.5 What this means for the BCI",
+    "text": "8.5 What this means for the BCI\nThe shape of the ITR curve is universal: it rises from very-short epochs (where decisions come fast but are nearly random), peaks somewhere in the middle, and falls in the long-epoch tail (where decisions are accurate but slow). The location of the peak depends on the subject, the classifier, and how much per-decision overhead the system has. On this single session with ~20 trials per class the absolute numbers are noisy, but the shape comes through clearly enough to motivate two follow-ups:\n\nTune to the user. A real product would estimate this curve per-subject during a short calibration and pick the operating point. Ch 9 takes the first step toward this, looking at how much subjects vary.\nMeasure end-to-end. T in the formula is “time per decision”, not just epoch length — onset detection, feature computation, network round-trip, and any required dwell-time all add. In production those overheads can shift the peak considerably; for our offline analysis they’re zero.\n\nITR is also why the SSVEP literature keeps gravitating to faster, cleaner classifiers (FBCCA, TRCA, deep variants): every percentage point of accuracy at a short epoch length translates into a meaningful bits-per-minute improvement, while the same gain at a long epoch is mostly cosmetic.",
+    "crumbs": [
+      "Evaluation",
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Time, Accuracy, and Information Transfer Rate</span>"
+    ]
+  },
+  {
+    "objectID": "09-subjects.html",
+    "href": "09-subjects.html",
+    "title": "9  People Are Different",
+    "section": "",
+    "text": "9.1 Setup\nThe pipeline of the last six chapters wrapped into a function: load → filter → epoch. We call it once per .mat file and run the FBCCA classifier from Ch 6 across truncated epoch lengths.\nfrom pathlib import Path\nimport numpy as np\nimport scipy.io\nimport matplotlib.pyplot as plt\nfrom scipy.signal import butter, filtfilt, iirnotch\nfrom sklearn.cross_decomposition import CCA\n\nDATA_DIR = Path(\"data\")\nSTIM_FREQS = [9, 10, 12, 15]\nN_HARMONICS = 2\nSUB_BANDS = [(6, 14), (14, 22), (22, 30), (30, 40)]\nWINDOW_LENGTHS = np.arange(1.0, 7.5, 0.5)\n\n\ndef make_filters(fs, low=5.0, high=40.0, line=50.0, order=4, notch_q=30):\n    bp_b, bp_a = butter(order, [low, high], btype=\"band\", fs=fs)\n    n_b, n_a = iirnotch(line, notch_q, fs=fs)\n    return (bp_b, bp_a), (n_b, n_a)\n\n\ndef find_trials(y):\n    ch10 = y[9].astype(int)\n    active = (ch10 != 0).astype(int)\n    diff = np.diff(active)\n    starts = np.where(diff == 1)[0] + 1\n    ends = np.where(diff == -1)[0] + 1\n    return [(int(s), int(e), int(ch10[s])) for s, e in zip(starts, ends)]\n\n\ndef load_session(path):\n    mat = scipy.io.loadmat(path)\n    fs = int(mat[\"fs\"][0, 0])\n    y = mat[\"y\"]\n    bp, notch = make_filters(fs)\n    y_filt = y.astype(float).copy()\n    for ci in range(1, 9):\n        y_filt[ci] = filtfilt(*notch, filtfilt(*bp, y[ci]))\n    trials = find_trials(y)\n    n_samples = trials[0][1] - trials[0][0]\n    epochs = np.stack([y_filt[1:9, s:s + n_samples] for s, _, _ in trials])\n    labels = np.array([fr for _, _, fr in trials])\n    return epochs, labels, fs\n\n\ndef build_template(freq, n_samples, fs, n_harmonics=N_HARMONICS):\n    t = np.arange(n_samples) / fs\n    refs = []\n    for h in range(1, n_harmonics + 1):\n        refs.append(np.sin(2 * np.pi * h * freq * t))\n        refs.append(np.cos(2 * np.pi * h * freq * t))\n    return np.stack(refs, axis=1)\n\n\ndef cca_score(X, Y):\n    cca = CCA(n_components=1, max_iter=500)\n    cca.fit(X, Y)\n    Xc, Yc = cca.transform(X, Y)\n    return float(np.corrcoef(Xc.ravel(), Yc.ravel())[0, 1])\n\n\ndef fbcca_predict(epoch, fs, sub_bands=SUB_BANDS, a=1.25, b=0.25):\n    n = epoch.shape[1]\n    weights = np.array([(i + 1) ** -a + b for i in range(len(sub_bands))])\n    band_signals = []\n    for low, high in sub_bands:\n        b_, a_ = butter(4, [low, high], btype=\"band\", fs=fs)\n        band_signals.append(filtfilt(b_, a_, epoch, axis=-1))\n    scores = np.zeros(len(STIM_FREQS))\n    for fi, freq in enumerate(STIM_FREQS):\n        Y = build_template(freq, n, fs, N_HARMONICS)\n        for bi, sig in enumerate(band_signals):\n            scores[fi] += weights[bi] * cca_score(sig.T, Y) ** 2\n    return STIM_FREQS[int(np.argmax(scores))]\n\n\ndef wolpaw_itr(p, N, T):\n    p = np.asarray(p, dtype=float)\n    bits = np.zeros_like(p)\n    middle = (p &gt; 1.0 / N) & (p &lt; 1.0)\n    bits[p &gt;= 1.0] = np.log2(N)\n    bits[middle] = (np.log2(N) + p[middle] * np.log2(p[middle])\n                    + (1 - p[middle]) * np.log2((1 - p[middle]) / (N - 1)))\n    return bits * 60.0 / T\n\n\ndef sweep(epochs, labels, fs, lengths):\n    accs = []\n    for L in lengths:\n        n_L = int(L * fs)\n        truncated = epochs[:, :, :n_L]\n        preds = np.array([fbcca_predict(ep, fs) for ep in truncated])\n        accs.append((preds == labels).mean())\n    return np.array(accs)\n\n\nSESSIONS = [\n    (\"S1 run 1\", \"subject_1_fvep_led_training_1.mat\", \"C0\", \"-\"),\n    (\"S1 run 2\", \"subject_1_fvep_led_training_2.mat\", \"C0\", \"--\"),\n    (\"S2 run 1\", \"subject_2_fvep_led_training_1.mat\", \"C1\", \"-\"),\n    (\"S2 run 2\", \"subject_2_fvep_led_training_2.mat\", \"C1\", \"--\"),\n]\n\nresults = []\nfor name, fname, color, ls in SESSIONS:\n    epochs, labels, fs = load_session(DATA_DIR / fname)\n    accs = sweep(epochs, labels, fs, WINDOW_LENGTHS)\n    itrs = wolpaw_itr(accs, N=4, T=WINDOW_LENGTHS)\n    results.append({\"name\": name, \"accs\": accs, \"itrs\": itrs, \"color\": color, \"ls\": ls})\n    print(f\"  {name:&lt;10} done — peak acc {accs.max():.0%}, peak ITR {itrs.max():.1f} bits/min\")\n\n  S1 run 1   done — peak acc 95%, peak ITR 41.2 bits/min\n  S1 run 2   done — peak acc 100%, peak ITR 41.2 bits/min\n  S2 run 1   done — peak acc 80%, peak ITR 20.4 bits/min\n  S2 run 2   done — peak acc 95%, peak ITR 15.1 bits/min",
+    "crumbs": [
+      "Evaluation",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>People Are Different</span>"
+    ]
+  },
+  {
+    "objectID": "09-subjects.html#accuracy-and-itr-side-by-side",
+    "href": "09-subjects.html#accuracy-and-itr-side-by-side",
+    "title": "9  People Are Different",
+    "section": "9.2 Accuracy and ITR side by side",
+    "text": "9.2 Accuracy and ITR side by side\n\nfig, axes = plt.subplots(1, 2, figsize=(14, 4.8))\n\nfor r in results:\n    axes[0].plot(WINDOW_LENGTHS, r[\"accs\"], r[\"ls\"], color=r[\"color\"],\n                 marker=\"o\", lw=1.5, label=r[\"name\"])\n    axes[1].plot(WINDOW_LENGTHS, r[\"itrs\"], r[\"ls\"], color=r[\"color\"],\n                 marker=\"o\", lw=1.5, label=r[\"name\"])\n\naxes[0].axhline(0.25, color=\"C3\", ls=\":\", alpha=0.5, label=\"chance (25 %)\")\naxes[0].set_xlabel(\"Epoch length (s)\")\naxes[0].set_ylabel(\"Accuracy\")\naxes[0].set_ylim(0, 1.05)\naxes[0].set_title(\"Accuracy\")\naxes[0].legend()\naxes[0].grid(alpha=0.3)\n\naxes[1].set_xlabel(\"Epoch length (s)\")\naxes[1].set_ylabel(\"ITR (bits/min)\")\naxes[1].set_title(\"Information Transfer Rate\")\naxes[1].legend()\naxes[1].grid(alpha=0.3)\n\nfig.tight_layout()\nfig.savefig(\"images/09-subjects_comparison.png\", dpi=200, bbox_inches=\"tight\")\nplt.show()\n\n\n\n\n\n\n\nFigure 9.1: Accuracy (left) and ITR (right) vs epoch length, for all four sessions. Subject 1 in blue, subject 2 in orange; solid = run 1, dashed = run 2.\n\n\n\n\n\nThe two subjects clearly separate. Subject 1 reaches ~90 % accuracy by 2 s and stays there; subject 2 needs the full 7-second epoch to come close. The ITR curves invert this nicely: subject 1’s peak sits in the 1.5–2.5 s range and is much taller (the user can take a decision every second or two with high confidence), while subject 2’s curve is flatter and lower.\nThis is the opposite of the ranking we’d guess from Ch 1. Back there, we picked subject 2 run 2 as the “running example” because it had the cleanest CH11 LDA output. CH11 turned out to be a poor proxy for what our own classifier could extract — subject 1’s CCA-friendly signal beats subject 2’s visually-clean baseline. The lesson: don’t let the shipped baseline pick your favourite subject.",
+    "crumbs": [
+      "Evaluation",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>People Are Different</span>"
+    ]
+  },
+  {
+    "objectID": "09-subjects.html#peak-performance-per-session",
+    "href": "09-subjects.html#peak-performance-per-session",
+    "title": "9  People Are Different",
+    "section": "9.3 Peak performance per session",
+    "text": "9.3 Peak performance per session\n\nprint(f\"{'session':&lt;10}  {'peak acc':&lt;9}  {'@ T (s)':&lt;9}  {'peak ITR':&lt;10}  {'@ T (s)':&lt;9}\")\nprint(f\"{'-' * 10}  {'-' * 9}  {'-' * 9}  {'-' * 10}  {'-' * 9}\")\nfor r in results:\n    i_acc = int(np.argmax(r[\"accs\"]))\n    i_itr = int(np.argmax(r[\"itrs\"]))\n    print(f\"{r['name']:&lt;10}  {r['accs'][i_acc]:&lt;9.0%}  {WINDOW_LENGTHS[i_acc]:&lt;9.1f}  \"\n          f\"{r['itrs'][i_itr]:&lt;10.1f}  {WINDOW_LENGTHS[i_itr]:&lt;9.1f}\")\n\nsession     peak acc   @ T (s)    peak ITR    @ T (s)  \n----------  ---------  ---------  ----------  ---------\nS1 run 1    95%        4.0        41.2        2.0      \nS1 run 2    100%       3.0        41.2        2.0      \nS2 run 1    80%        5.5        20.4        1.5      \nS2 run 2    95%        6.5        15.1        6.5      \n\n\nThe columns matter together. Looking at peak accuracy alone, all four sessions clear 80 %, which would suggest “everyone is fine”. But peak ITR exposes the gap: subject 1’s ITR roughly doubles subject 2’s. Using accuracy as the ranking metric hides the fact that the two subjects are operating at very different bandwidth tiers.",
+    "crumbs": [
+      "Evaluation",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>People Are Different</span>"
+    ]
+  },
+  {
+    "objectID": "09-subjects.html#where-do-our-subjects-sit-in-the-literature",
+    "href": "09-subjects.html#where-do-our-subjects-sit-in-the-literature",
+    "title": "9  People Are Different",
+    "section": "9.4 Where do our subjects sit in the literature?",
+    "text": "9.4 Where do our subjects sit in the literature?\nThe largest published demographics study for this exact setup — 4-class LED-flicker SSVEP with 8 occipital channels — is Guger et al. (2012), with 53 subjects. Their headline numbers:\n\nMean accuracy: 95.5 % across the population.\n96.2 % of subjects scored above 80 % accuracy.\nNo subject scored below 60 %.\n\nThat last figure is the striking one. Other BCI paradigms (motor imagery, P300) routinely have a “BCI illiteracy” tail of users who can’t drive the system above chance. SSVEP doesn’t have that tail — the response is automatic, requires no mental strategy, and works for almost everyone with intact vision.\nOur N = 2 fits inside that distribution. Both subjects clear 80 % at the full epoch (subject 1 hits 100 % on run 2; subject 2 reaches 95 % on run 2). Subject 2’s run 1 caps at 80 %, which would have placed them at the 96th-percentile floor of Guger et al. (2012). Nothing pathological, just on the harder end.\nWe can’t say more than that. With two subjects we can verify “we look like we belong in the published distribution”; we cannot estimate the distribution itself, predict where a new subject would land, or claim our pipeline outperforms anyone else’s. The right shape of evidence for those questions is multi-site, pre-registered, with the sample size needed to bound the metric of interest — not a thoughtful re-analysis of one dataset.",
+    "crumbs": [
+      "Evaluation",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>People Are Different</span>"
+    ]
+  },
+  {
+    "objectID": "09-subjects.html#what-n-2-cant-tell-us",
+    "href": "09-subjects.html#what-n-2-cant-tell-us",
+    "title": "9  People Are Different",
+    "section": "9.5 What N = 2 can’t tell us",
+    "text": "9.5 What N = 2 can’t tell us\nThings this analysis cannot answer, ordered by how often they get answered anyway:\n\nPopulation accuracy. Any number we report (mean, peak, peak ITR) on N = 2 is anecdote. Confidence intervals on a two-subject mean are wider than the dataset’s full range.\nWhich classifier is “best”. CCA / FBCCA dominated CH11 here, but on subject 1 plain CCA already saturates at 100 %; FBCCA’s contribution can’t be measured. A larger sample would show whether the FBCCA gain is real or a single-trial fluke.\nWhat predicts a “good” subject. Maybe alpha amplitude, electrode contact quality, attention, age, eye dominance, time-of-day. We have no leverage on any of this with two people.\nWithin-subject day-to-day stability. Each subject did two runs, recorded back-to-back; the variability we see is between-runs-within-session, not across genuine sessions on different days. The latter is what BCI deployment cares about.\n\nThe honest summary: this dataset is large enough to develop and verify a pipeline (which is what the rest of the book did), and small enough that any quantitative claim about “users in general” requires a different study to justify. SSVEP’s robust population profile, established by Guger et al. (2012) and confirmed in subsequent multi-site studies, is the reason a competition or product can ship with this paradigm without much per-user calibration — but the evidence for that reliability lives in those larger studies, not here.\n\n\n\n\nGuger, Christoph, Brendan Z. Allison, Bernhard Großwindhager, et al. 2012. “How Many People Could Use an SSVEP BCI?” Frontiers in Neuroscience 6: 169. https://doi.org/10.3389/fnins.2012.00169.",
+    "crumbs": [
+      "Evaluation",
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>People Are Different</span>"
+    ]
+  },
+  {
+    "objectID": "summary.html",
+    "href": "summary.html",
+    "title": "10  Summary",
+    "section": "",
+    "text": "10.1 What we built\nA complete SSVEP-BCI pipeline, end to end, on a four-file dataset:",
+    "crumbs": [
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>Summary</span>"
+    ]
+  },
+  {
+    "objectID": "summary.html#what-we-built",
+    "href": "summary.html#what-we-built",
+    "title": "10  Summary",
+    "section": "",
+    "text": "Ch 1 — opened the four .mat files, decoded the eleven channels, and discovered that the trial-class mapping for CH11 lives in a screenshot rather than the description text.\nCh 2 — saw the SSVEP as a peak in raw PSD, with a working subject (subject 1 run 1) that lets the response stand visibly above the alpha rhythm.\nCh 3 — designed a 5–40 Hz bandpass + 50 Hz notch and showed honestly that on this file filtering is mostly cosmetic: it removes drift and would handle line noise if there were any, but doesn’t change the in-band spectrum.\nCh 4 — recovered the trial structure from CH10 transitions and built the canonical (20, 8, 1884) epoch tensor that every later chapter consumes.\nCh 5 — sampled the PSD at the four candidate frequencies (and their second harmonics) on each of the eight channels, then converted raw power into peak-vs-neighbourhood SNR features.\nCh 6 — built sine/cosine reference templates per candidate frequency and used CCA to score each epoch against them. FBCCA extended the idea across sub-bands.\nCh 7 — turned features into class labels, comparing CCA argmax (no training) against LDA on the spectral features and the CH11 baseline shipped with the data. CCA cleared 90 %; FBCCA hit 95 %; LDA-on-features and CH11 tied near 55 %.\nCh 8 — swept epoch length from 1 s to 7 s and showed that peak Information Transfer Rate sits at 2–3 s, well below where the accuracy curve plateaus.\nCh 9 — ran the pipeline on both subjects and observed that subject 1 (the one whose CH11 baseline was broken) actually has the cleaner SSVEP for our methods — confirming both subjects fit inside the distribution reported by Guger et al. (2012).",
+    "crumbs": [
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>Summary</span>"
+    ]
+  },
+  {
+    "objectID": "summary.html#what-was-actually-surprising",
+    "href": "summary.html#what-was-actually-surprising",
+    "title": "10  Summary",
+    "section": "10.2 What was actually surprising",
+    "text": "10.2 What was actually surprising\nThe book’s a-priori plan and what the data actually showed disagreed in three places worth re-stating:\n\nThe shipped baseline lied about which subject was “easier”. Subject 2 run 2 was picked as the running example in Ch 1 because its CH11 LDA looked clean. Subject 1 run 1’s CH11 was stuck on class 3 — the “broken” file. With our own CCA classifier the ranking inverts: subject 1 saturates at 100 % by 4 s, subject 2 reaches that only at 7 s. Don’t let the shipped baseline pick your favourite subject.\nFiltering on this dataset is mostly cosmetic, not corrective. Butterworth filters are flat in the passband by construction, so the alpha rhythm sitting on top of 9–12 Hz stim frequencies survives filtering untouched. What handles alpha is features that care about phase (CCA), not preprocessing.\nFor SSVEP, feature engineering is the classifier. A per-class CCA score is intrinsically class-comparable, so the “model” is just argmax. The work that distinguishes a 90 % pipeline from a 55 % one happens at the feature stage. Generic classifiers on top of generic features (LDA on amplitudes) leave most of the available structure on the table.",
+    "crumbs": [
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>Summary</span>"
+    ]
+  },
+  {
+    "objectID": "summary.html#what-we-deliberately-skipped",
+    "href": "summary.html#what-we-deliberately-skipped",
+    "title": "10  Summary",
+    "section": "10.3 What we deliberately skipped",
+    "text": "10.3 What we deliberately skipped\nThis was a single-dataset, single-pipeline walkthrough. The following are out of scope but real:\n\nSubject-independent models — train on one user, test on another. Possible with template-matching methods that don’t need per-user calibration; needs many more subjects to evaluate.\nDeep learning — EEGNet, FBCNN, transformer variants. Not obviously better than CCA on small SSVEP datasets, but the comparison would need careful regularization and a held-out test split.\nCross-session transfer — train on training_1, test on training_2 of the same subject. The two runs were recorded back-to-back, so this would mostly probe within-day stability; the more interesting question (across-day stability) needs different data.\nArtifact rejection — ICA, regression-based EOG correction. SSVEP is robust enough that this rarely helps; for a paradigm like P300 the same shortcut wouldn’t work.\nOnline / asynchronous BCI — onset detection without a known trigger, idle-state rejection, dwell-time tuning. The offline accuracy and ITR numbers we reported assume an oracle stimulus onset.\nPopulation-scale claims — anything beyond “we fit inside the published distribution” needs N ≫ 2 and pre-registered evaluation. Guger et al. (2012) with N = 53 is the right shape of study; a re-analysis of one dataset is not.",
+    "crumbs": [
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>Summary</span>"
+    ]
+  },
+  {
+    "objectID": "summary.html#where-to-go-next",
+    "href": "summary.html#where-to-go-next",
+    "title": "10  Summary",
+    "section": "10.4 Where to go next",
+    "text": "10.4 Where to go next\nConcrete starting points that build on this book’s pipeline:\n\nSwitch to a larger benchmark. The Tsinghua BETA and Benchmark SSVEP datasets are open and large enough to test classifier choices, calibration regimes, and cross-subject transfer. The pipeline in this book translates directly — load, filter, epoch, score.\nTry TRCA. Task-Related Component Analysis learns spatial filters per class from training data and tends to beat CCA / FBCCA when calibration data is available. A natural next chapter.\nCalibrated vs calibration-free. Within the same dataset, compare CCA argmax (no calibration), TRCA (per-subject calibration), and a transfer-learning method that calibrates on others. The interesting question is whether the calibration cost is worth it for the user.\nMeasure end-to-end ITR. The Wolpaw formula uses T = epoch length here. In production, T includes onset detection, processing delay, network round-trip, and dwell time. A simple instrumented prototype would put real numbers on the gap between offline and online.\n\nThe pipeline you have at the end of Ch 9 is enough to do any of these — just point it at different data, a different classifier function, or a different evaluation loop.\n\n\n\n\nGuger, Christoph, Brendan Z. Allison, Bernhard Großwindhager, et al. 2012. “How Many People Could Use an SSVEP BCI?” Frontiers in Neuroscience 6: 169. https://doi.org/10.3389/fnins.2012.00169.",
+    "crumbs": [
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>Summary</span>"
+    ]
+  },
+  {
+    "objectID": "acronyms.html",
+    "href": "acronyms.html",
+    "title": "Acronyms",
+    "section": "",
+    "text": "BCI\n\nBrain–Computer Interface — a system that lets a person communicate or control a device through brain signals alone, without muscle movement.\n\nCCA\n\nCanonical Correlation Analysis — finds linear combinations of two signal sets that are maximally correlated. The standard SSVEP feature when references are sine/cosine pairs at the stimulation frequencies.\n\nDC\n\nDirect Current — the zero-frequency component of a signal. In raw EEG it shows up as a baseline offset that needs to be removed before spectral analysis.\n\nEEG\n\nElectroencephalography (or Electroencephalogram) — recording of the electrical activity of the brain measured at the scalp.\n\nFBCCA\n\nFilter Bank CCA — an extension of CCA that splits the signal into multiple sub-bands (each capturing a harmonic of the stimulation frequency) before running CCA, then combines the per-band correlations.\n\nICA\n\nIndependent Component Analysis — decomposes a multi-channel signal into statistically independent sources. Used in EEG to isolate and remove artifacts such as eye blinks.\n\nITR\n\nInformation Transfer Rate — bits-per-minute throughput of a BCI, accounting for both classifier accuracy and trial duration. The metric that determines how usable a BCI actually is.\n\nLDA\n\nLinear Discriminant Analysis — a linear classifier that projects features onto the direction maximizing between-class versus within-class variance. The baseline classifier used by the g.tec tool that produced CH11.\n\nLED\n\nLight-Emitting Diode — the light source flickered at a fixed frequency to drive the SSVEP response.\n\nPSD\n\nPower Spectral Density — describes how the power of a signal is distributed across frequency. Computed here with Welch’s method.\n\nSNR\n\nSignal-to-Noise Ratio — power of the signal of interest divided by power of the background. Used in this book to quantify how clearly an SSVEP peak rises above the alpha rhythm.\n\nSSVEP\n\nSteady-State Visual Evoked Potential — the periodic, phase-locked EEG response generated by visual cortex when the eye is exposed to a flickering stimulus. The phenomenon this entire book is built on.",
+    "crumbs": [
+      "Appendices",
+      "Acronyms"
+    ]
+  },
+  {
+    "objectID": "references.html",
+    "href": "references.html",
+    "title": "References",
+    "section": "",
+    "text": "Guger, Christoph, Brendan Z. Allison, Bernhard Großwindhager, et al.\n2012. “How Many People Could Use an SSVEP\nBCI?” Frontiers in Neuroscience 6: 169. https://doi.org/10.3389/fnins.2012.00169.",
+    "crumbs": [
+      "Appendices",
+      "References"
+    ]
+  }
+]

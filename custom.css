@@ -1,0 +1,6 @@
+.figure-img,
+.quarto-figure img,
+.cell-output-display img {
+  max-width: 100%;
+  height: auto;
+}
