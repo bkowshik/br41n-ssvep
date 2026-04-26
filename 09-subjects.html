@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.36">
+<meta name="generator" content="quarto-1.9.37">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -96,10 +96,10 @@ div.csl-indent {
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-a2d7b48f14b838cedb12a1fc2429b1b5.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-6029dec71651c072c732535701ccdffd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
 <link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
@@ -365,7 +365,7 @@ div.csl-indent {
 <section id="setup" class="level2" data-number="9.1">
 <h2 data-number="9.1" class="anchored" data-anchor-id="setup"><span class="header-section-number">9.1</span> Setup</h2>
 <p>The pipeline of the last six chapters wrapped into a function: load → filter → epoch. We call it once per <code>.mat</code> file and run the FBCCA classifier from Ch 6 across truncated epoch lengths.</p>
-<div id="ed98d62e" class="cell" data-execution_count="1">
+<div id="ba9d232d" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.io</span>
@@ -529,7 +529,7 @@ Figure&nbsp;9.1: Accuracy (left) and ITR (right) vs epoch length, for all four s
 </section>
 <section id="peak-performance-per-session" class="level2" data-number="9.3">
 <h2 data-number="9.3" class="anchored" data-anchor-id="peak-performance-per-session"><span class="header-section-number">9.3</span> Peak performance per session</h2>
-<div id="7ace8ae1" class="cell" data-execution_count="3">
+<div id="29bd6432" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'session'</span><span class="sc">:&lt;10}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'peak acc'</span><span class="sc">:&lt;9}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'@ T (s)'</span><span class="sc">:&lt;9}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'peak ITR'</span><span class="sc">:&lt;10}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'@ T (s)'</span><span class="sc">:&lt;9}</span><span class="ss">"</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">10</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">9</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">9</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">10</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">9</span><span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> results:</span>
