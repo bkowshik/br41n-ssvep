@@ -10,6 +10,26 @@
     ]
   },
   {
+    "objectID": "index.html#the-core-idea-in-one-picture",
+    "href": "index.html#the-core-idea-in-one-picture",
+    "title": "br41n.io - SSVEP Data Analysis",
+    "section": "The core idea, in one picture",
+    "text": "The core idea, in one picture\n\n\n\nStare at an LED flickering 9 times a second, and the EEG over your visual cortex grows a sharp peak at exactly 9 Hz — with a smaller echo at 18 Hz, its first harmonic. The brain literally hums along.\n\n\nThat spike is the entire trick behind this book. Flicker four lights at four different frequencies, look at one of them, and the EEG “echoes” the frequency you’re staring at. Read that echo, and you know which light the person picked — a brain–computer interface (BCI) with no surgery, no training, and not much hardware. This is SSVEP: Steady-State Visual Evoked Potentials.",
+    "crumbs": [
+      "About this book"
+    ]
+  },
+  {
+    "objectID": "index.html#and-it-actually-works",
+    "href": "index.html#and-it-actually-works",
+    "title": "br41n.io - SSVEP Data Analysis",
+    "section": "And it actually works",
+    "text": "And it actually works\n\n\n\nFour-way “which light is the subject looking at” accuracy on a real session. Random guessing would get 25%. The best pipeline we build (FBCCA) lands at 95%.\n\n\nGoing from the squiggly raw EEG to a 95%-accurate four-way classifier is what the chapters walk through — one runnable artifact at a time. By the end of Chapter 7 you’ve built that bar chart yourself; Chapter 8 asks how fast the BCI can communicate; Chapter 9 asks how well it generalises across people.",
+    "crumbs": [
+      "About this book"
+    ]
+  },
+  {
     "objectID": "index.html#what-is-ssvep",
     "href": "index.html#what-is-ssvep",
     "title": "br41n.io - SSVEP Data Analysis",

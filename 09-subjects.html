@@ -365,7 +365,7 @@ div.csl-indent {
 <section id="setup" class="level2" data-number="9.1">
 <h2 data-number="9.1" class="anchored" data-anchor-id="setup"><span class="header-section-number">9.1</span> Setup</h2>
 <p>The pipeline of the last six chapters wrapped into a function: load → filter → epoch. We call it once per <code>.mat</code> file and run the FBCCA classifier from Ch 6 across truncated epoch lengths.</p>
-<div id="ba9d232d" class="cell" data-execution_count="1">
+<div id="ed9cb61f" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.io</span>
@@ -529,7 +529,7 @@ Figure&nbsp;9.1: Accuracy (left) and ITR (right) vs epoch length, for all four s
 </section>
 <section id="peak-performance-per-session" class="level2" data-number="9.3">
 <h2 data-number="9.3" class="anchored" data-anchor-id="peak-performance-per-session"><span class="header-section-number">9.3</span> Peak performance per session</h2>
-<div id="29bd6432" class="cell" data-execution_count="3">
+<div id="ee5cc80c" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'session'</span><span class="sc">:&lt;10}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'peak acc'</span><span class="sc">:&lt;9}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'@ T (s)'</span><span class="sc">:&lt;9}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'peak ITR'</span><span class="sc">:&lt;10}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'@ T (s)'</span><span class="sc">:&lt;9}</span><span class="ss">"</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">10</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">9</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">9</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">10</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">9</span><span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> results:</span>

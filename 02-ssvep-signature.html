@@ -365,7 +365,7 @@ Figure&nbsp;2.1: Electrode montage — eight occipital sites over visual cortex.
 </section>
 <section id="the-signal-across-the-8-occipital-electrodes" class="level2" data-number="2.3">
 <h2 data-number="2.3" class="anchored" data-anchor-id="the-signal-across-the-8-occipital-electrodes"><span class="header-section-number">2.3</span> The signal across the 8 occipital electrodes</h2>
-<div id="2a20cd36" class="cell" data-execution_count="1">
+<div id="4855c88d" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.io</span>
@@ -400,7 +400,7 @@ Class counts: {9: 5, 10: 5, 12: 5, 15: 5}</code></pre>
 </div>
 </div>
 <p>Single-trial PSDs are noisy — not every trial shows the SSVEP equally clearly. For the demos in this chapter we pick the single trial with the strongest Oz response at its stimulation frequency, so the patterns we’re trying to point at are visible. Block 3 will show the per-class averages, where the peaks emerge robustly across all five trials of each class.</p>
-<div id="a5190a3f" class="cell" data-execution_count="2">
+<div id="92b21707" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> oz_power_at_stim(trial):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    s, e, fr <span class="op">=</span> trial</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    ff, pxx <span class="op">=</span> welch(y[OZ, s:e], fs<span class="op">=</span>fs, nperseg<span class="op">=</span><span class="bu">min</span>(<span class="dv">1024</span>, e <span class="op">-</span> s))</span>

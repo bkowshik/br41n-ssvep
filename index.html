@@ -46,6 +46,9 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="site_libs/bootstrap/bootstrap-6029dec71651c072c732535701ccdffd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -268,6 +271,8 @@ ul.task-list li input[type="checkbox"] {
   <ul>
   <li><a href="#about-this-book" id="toc-about-this-book" class="nav-link active" data-scroll-target="#about-this-book">About this book</a>
   <ul class="collapse">
+  <li><a href="#the-core-idea-in-one-picture" id="toc-the-core-idea-in-one-picture" class="nav-link" data-scroll-target="#the-core-idea-in-one-picture">The core idea, in one picture</a></li>
+  <li><a href="#and-it-actually-works" id="toc-and-it-actually-works" class="nav-link" data-scroll-target="#and-it-actually-works">And it actually works</a></li>
   <li><a href="#what-is-ssvep" id="toc-what-is-ssvep" class="nav-link" data-scroll-target="#what-is-ssvep">What is SSVEP?</a></li>
   <li><a href="#whats-in-the-dataset" id="toc-whats-in-the-dataset" class="nav-link" data-scroll-target="#whats-in-the-dataset">What’s in the dataset</a></li>
   <li><a href="#how-the-book-is-structured" id="toc-how-the-book-is-structured" class="nav-link" data-scroll-target="#how-the-book-is-structured">How the book is structured</a></li>
@@ -313,6 +318,26 @@ ul.task-list li input[type="checkbox"] {
 <section id="about-this-book" class="level1 unnumbered">
 <h1 class="unnumbered">About this book</h1>
 <p>A code-first walkthrough of the br41n.io SSVEP dataset, structured around the canonical EEG analysis pipeline: data → preprocessing → feature engineering → modelling → evaluation. Every chapter follows the same shape — runnable code, a generated artifact, then the theory that explains what the artifact shows.</p>
+<section id="the-core-idea-in-one-picture" class="level2">
+<h2 class="anchored" data-anchor-id="the-core-idea-in-one-picture">The core idea, in one picture</h2>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="images/02-ssvep-signature_psd.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="Stare at an LED flickering 9 times a second, and the EEG over your visual cortex grows a sharp peak at exactly 9 Hz — with a smaller echo at 18 Hz, its first harmonic. The brain literally hums along."><img src="images/02-ssvep-signature_psd.png" class="img-fluid figure-img" alt="Stare at an LED flickering 9 times a second, and the EEG over your visual cortex grows a sharp peak at exactly 9 Hz — with a smaller echo at 18 Hz, its first harmonic. The brain literally hums along."></a></p>
+<figcaption>Stare at an LED flickering 9 times a second, and the EEG over your visual cortex grows a sharp peak at exactly 9 Hz — with a smaller echo at 18 Hz, its first harmonic. The brain literally hums along.</figcaption>
+</figure>
+</div>
+<p>That spike is the entire trick behind this book. Flicker four lights at four different frequencies, look at one of them, and the EEG “echoes” the frequency you’re staring at. Read that echo, and you know which light the person picked — a brain–computer interface (BCI) with no surgery, no training, and not much hardware. This is <strong>SSVEP</strong>: Steady-State Visual Evoked Potentials.</p>
+</section>
+<section id="and-it-actually-works" class="level2">
+<h2 class="anchored" data-anchor-id="and-it-actually-works">And it actually works</h2>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="images/07-classification_comparison.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Four-way “which light is the subject looking at” accuracy on a real session. Random guessing would get 25%. The best pipeline we build (FBCCA) lands at 95%."><img src="images/07-classification_comparison.png" class="img-fluid figure-img" alt="Four-way “which light is the subject looking at” accuracy on a real session. Random guessing would get 25%. The best pipeline we build (FBCCA) lands at 95%."></a></p>
+<figcaption>Four-way “which light is the subject looking at” accuracy on a real session. Random guessing would get 25%. The best pipeline we build (FBCCA) lands at 95%.</figcaption>
+</figure>
+</div>
+<p>Going from the squiggly raw EEG to a 95%-accurate four-way classifier is what the chapters walk through — one runnable artifact at a time. By the end of <a href="./07-classification.html">Chapter 7</a> you’ve built that bar chart yourself; <a href="./08-time-accuracy-itr.html">Chapter 8</a> asks how <em>fast</em> the BCI can communicate; <a href="./09-subjects.html">Chapter 9</a> asks how well it generalises across people.</p>
+</section>
 <section id="what-is-ssvep" class="level2">
 <h2 class="anchored" data-anchor-id="what-is-ssvep">What is SSVEP?</h2>
 <p>Steady-State Visual Evoked Potentials. When someone stares at a light flickering at frequency <em>f</em>, their visual cortex produces an EEG response that oscillates at the same frequency. By flickering several lights at distinguishable frequencies and reading the EEG, a brain–computer interface can tell which light the person is looking at — and use that as an input signal.</p>
@@ -782,6 +807,38 @@ ul.task-list li input[type="checkbox"] {
   </div>
 </nav>
 </div> <!-- /content -->
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
+(function() {
+  let previousOnload = window.onload;
+  window.onload = () => {
+    if (previousOnload) {
+      previousOnload();
+    }
+    lightboxQuarto.on('slide_before_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      const href = trigger.getAttribute('href');
+      if (href !== null) {
+        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+        if (imgEl !== null) {
+          const srcAttr = imgEl.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("data:")) {
+            slideConfig.href = srcAttr;
+          }
+        }
+      } 
+    });
+  
+    lightboxQuarto.on('slide_after_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(slideNode);
+      }
+    });
+  
+  };
+  
+})();
+          </script>
 
 
 
