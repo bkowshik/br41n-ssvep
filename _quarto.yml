@@ -4,8 +4,11 @@ project:
     - "images/"
   post-render:
     - quarto render slides.qmd
-    - rm -rf _book/slides.html _book/slides_files
-    - mv slides.html slides_files _book/
+    - rm -rf _book/slides
+    - mkdir -p _book/slides
+    - mv slides.html _book/slides/index.html
+    - mv slides_files _book/slides/slides_files
+    - cp -R images _book/slides/images
 
 execute:
   freeze: auto
