@@ -99,7 +99,7 @@ div.csl-indent {
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-6029dec71651c072c732535701ccdffd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-e9a2425ed2db37d2ba9572119ae29c4e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
 <link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
@@ -157,7 +157,11 @@ div.csl-indent {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full">
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
-    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./logo.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="./logo.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
     <div class="sidebar-title mb-0 py-0">
       <a href="./">br41n.io - SSVEP Data Analysis</a> 
     </div>
@@ -172,7 +176,7 @@ div.csl-indent {
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">About this book</span></a>
+ <span class="menu-text">About</span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -287,32 +291,21 @@ div.csl-indent {
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./summary.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Summary</span></span></a>
+ <span class="menu-text">Summary</span></a>
   </div>
 </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
- <span class="menu-text">Appendices</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./acronyms.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Acronyms</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./references.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">References</span></a>
   </div>
 </li>
-      </ul>
-  </li>
     </ul>
     </div>
 </nav>
@@ -365,7 +358,9 @@ div.csl-indent {
 <section id="setup" class="level2" data-number="9.1">
 <h2 data-number="9.1" class="anchored" data-anchor-id="setup"><span class="header-section-number">9.1</span> Setup</h2>
 <p>The pipeline of the last six chapters wrapped into a function: load → filter → epoch. We call it once per <code>.mat</code> file and run the FBCCA classifier from Ch 6 across truncated epoch lengths.</p>
-<div id="48e7be61" class="cell" data-execution_count="1">
+<div id="cd4770aa" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.io</span>
@@ -475,6 +470,7 @@ div.csl-indent {
 <span id="cb1-107"><a href="#cb1-107" aria-hidden="true" tabindex="-1"></a>    itrs <span class="op">=</span> wolpaw_itr(accs, N<span class="op">=</span><span class="dv">4</span>, T<span class="op">=</span>WINDOW_LENGTHS)</span>
 <span id="cb1-108"><a href="#cb1-108" aria-hidden="true" tabindex="-1"></a>    results.append({<span class="st">"name"</span>: name, <span class="st">"accs"</span>: accs, <span class="st">"itrs"</span>: itrs, <span class="st">"color"</span>: color, <span class="st">"ls"</span>: ls})</span>
 <span id="cb1-109"><a href="#cb1-109" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>name<span class="sc">:&lt;10}</span><span class="ss"> done — peak acc </span><span class="sc">{</span>accs<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.0%}</span><span class="ss">, peak ITR </span><span class="sc">{</span>itrs<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1f}</span><span class="ss"> bits/min"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>  S1 run 1   done — peak acc 95%, peak ITR 41.2 bits/min
   S1 run 2   done — peak acc 100%, peak ITR 41.2 bits/min
@@ -486,6 +482,8 @@ div.csl-indent {
 <section id="accuracy-and-itr-side-by-side" class="level2" data-number="9.2">
 <h2 data-number="9.2" class="anchored" data-anchor-id="accuracy-and-itr-side-by-side"><span class="header-section-number">9.2</span> Accuracy and ITR side by side</h2>
 <div id="cell-fig-subject-comparison" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="fl">4.8</span>))</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> results:</span>
@@ -511,6 +509,7 @@ div.csl-indent {
 <span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/09-subjects_comparison.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-subject-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -529,7 +528,9 @@ Figure&nbsp;9.1: Accuracy (left) and ITR (right) vs epoch length, for all four s
 </section>
 <section id="peak-performance-per-session" class="level2" data-number="9.3">
 <h2 data-number="9.3" class="anchored" data-anchor-id="peak-performance-per-session"><span class="header-section-number">9.3</span> Peak performance per session</h2>
-<div id="5370c4be" class="cell" data-execution_count="3">
+<div id="bc7a238d" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'session'</span><span class="sc">:&lt;10}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'peak acc'</span><span class="sc">:&lt;9}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'@ T (s)'</span><span class="sc">:&lt;9}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'peak ITR'</span><span class="sc">:&lt;10}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'@ T (s)'</span><span class="sc">:&lt;9}</span><span class="ss">"</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">10</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">9</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">9</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">10</span><span class="sc">}</span><span class="ss">  </span><span class="sc">{</span><span class="st">'-'</span> <span class="op">*</span> <span class="dv">9</span><span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> results:</span>
@@ -537,6 +538,7 @@ Figure&nbsp;9.1: Accuracy (left) and ITR (right) vs epoch length, for all four s
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    i_itr <span class="op">=</span> <span class="bu">int</span>(np.argmax(r[<span class="st">"itrs"</span>]))</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>r[<span class="st">'name'</span>]<span class="sc">:&lt;10}</span><span class="ss">  </span><span class="sc">{</span>r[<span class="st">'accs'</span>][i_acc]<span class="sc">:&lt;9.0%}</span><span class="ss">  </span><span class="sc">{</span>WINDOW_LENGTHS[i_acc]<span class="sc">:&lt;9.1f}</span><span class="ss">  "</span></span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>          <span class="ss">f"</span><span class="sc">{</span>r[<span class="st">'itrs'</span>][i_itr]<span class="sc">:&lt;10.1f}</span><span class="ss">  </span><span class="sc">{</span>WINDOW_LENGTHS[i_itr]<span class="sc">:&lt;9.1f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>session     peak acc   @ T (s)    peak ITR    @ T (s)  
 ----------  ---------  ---------  ----------  ---------
@@ -988,7 +990,7 @@ Guger, Christoph, Brendan Z. Allison, Bernhard Großwindhager, et al. 2012. <spa
   </div>
   <div class="nav-page nav-page-next">
       <a href="./summary.html" class="pagination-link" aria-label="Summary">
-        <span class="nav-page-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Summary</span></span> <i class="bi bi-arrow-right-short"></i>
+        <span class="nav-page-text">Summary</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

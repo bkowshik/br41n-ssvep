@@ -80,7 +80,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-6029dec71651c072c732535701ccdffd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-e9a2425ed2db37d2ba9572119ae29c4e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
 <link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
@@ -138,7 +138,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full">
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
-    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./logo.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="./logo.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
     <div class="sidebar-title mb-0 py-0">
       <a href="./">br41n.io - SSVEP Data Analysis</a> 
     </div>
@@ -153,7 +157,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">About this book</span></a>
+ <span class="menu-text">About</span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -268,32 +272,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./summary.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Summary</span></span></a>
+ <span class="menu-text">Summary</span></a>
   </div>
 </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
- <span class="menu-text">Appendices</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./acronyms.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Acronyms</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./references.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">References</span></a>
   </div>
 </li>
-      </ul>
-  </li>
     </ul>
     </div>
 </nav>
@@ -350,7 +343,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="what-the-unfiltered-spectrum-looks-like" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="what-the-unfiltered-spectrum-looks-like"><span class="header-section-number">3.2</span> What the unfiltered spectrum looks like</h2>
-<div id="cf09ab65" class="cell" data-execution_count="1">
+<div id="3b8ce2dd" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.io</span>
@@ -369,6 +364,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Frequency resolution: </span><span class="sc">{</span>ff_raw[<span class="dv">1</span>] <span class="op">-</span> ff_raw[<span class="dv">0</span>]<span class="sc">:.3f}</span><span class="ss"> Hz"</span>)</span>
 <span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Power at 0.5 Hz: </span><span class="sc">{</span>pxx_raw[np.argmin(np.<span class="bu">abs</span>(ff_raw <span class="op">-</span> <span class="fl">0.5</span>))]<span class="sc">:.1f}</span><span class="ss">"</span>)</span>
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Power at 50 Hz : </span><span class="sc">{</span>pxx_raw[np.argmin(np.<span class="bu">abs</span>(ff_raw <span class="op">-</span> <span class="dv">50</span>))]<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Frequency resolution: 0.062 Hz
 Power at 0.5 Hz: 134.9
@@ -376,6 +372,8 @@ Power at 50 Hz : 0.0012</code></pre>
 </div>
 </div>
 <div id="cell-fig-raw-psd" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">4.5</span>))</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>ax.semilogy(ff_raw, pxx_raw, lw<span class="op">=</span><span class="dv">1</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> f <span class="kw">in</span> [<span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">12</span>, <span class="dv">15</span>]:</span>
@@ -389,6 +387,7 @@ Power at 50 Hz : 0.0012</code></pre>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/03-filtering_raw_psd.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-raw-psd" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -406,7 +405,9 @@ Figure&nbsp;3.1: Long-window PSD on Oz, full session, log-y axis.
 </section>
 <section id="designing-the-filter" class="level2" data-number="3.3">
 <h2 data-number="3.3" class="anchored" data-anchor-id="designing-the-filter"><span class="header-section-number">3.3</span> Designing the filter</h2>
-<div id="10fee4dd" class="cell" data-execution_count="3">
+<div id="6c4c5982" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_filters(fs, low<span class="op">=</span><span class="fl">5.0</span>, high<span class="op">=</span><span class="fl">40.0</span>, line<span class="op">=</span><span class="fl">50.0</span>, order<span class="op">=</span><span class="dv">4</span>, notch_q<span class="op">=</span><span class="dv">30</span>):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    bp_b, bp_a <span class="op">=</span> butter(order, [low, high], btype<span class="op">=</span><span class="st">"band"</span>, fs<span class="op">=</span>fs)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    n_b, n_a <span class="op">=</span> iirnotch(line, notch_q, fs<span class="op">=</span>fs)</span>
@@ -421,8 +422,11 @@ Figure&nbsp;3.1: Long-window PSD on Oz, full session, log-y axis.
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>bp, notch <span class="op">=</span> make_filters(fs)</span>
 <span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>oz_filt <span class="op">=</span> apply_filters(oz_raw, bp, notch)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 </div>
 <div id="cell-fig-filter-response" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>w_bp, h_bp <span class="op">=</span> freqz(<span class="op">*</span>bp, fs<span class="op">=</span>fs, worN<span class="op">=</span><span class="dv">4096</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>w_n, h_n <span class="op">=</span> freqz(<span class="op">*</span>notch, fs<span class="op">=</span>fs, worN<span class="op">=</span><span class="dv">4096</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>combined_db <span class="op">=</span> <span class="dv">20</span> <span class="op">*</span> np.log10(np.<span class="bu">abs</span>(h_bp <span class="op">*</span> h_n) <span class="op">+</span> <span class="fl">1e-12</span>)</span>
@@ -442,6 +446,7 @@ Figure&nbsp;3.1: Long-window PSD on Oz, full session, log-y axis.
 <span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/03-filtering_response.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-filter-response" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -461,6 +466,8 @@ Figure&nbsp;3.2: Combined bandpass (5–40 Hz, 4th-order Butterworth) and notch 
 <section id="before-and-after-spectrum" class="level2" data-number="3.4">
 <h2 data-number="3.4" class="anchored" data-anchor-id="before-and-after-spectrum"><span class="header-section-number">3.4</span> Before and after — spectrum</h2>
 <div id="cell-fig-bef-aft-psd" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ff_filt, pxx_filt <span class="op">=</span> welch(oz_filt, fs<span class="op">=</span>fs, nperseg<span class="op">=</span><span class="dv">4096</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">4.5</span>))</span>
@@ -476,6 +483,7 @@ Figure&nbsp;3.2: Combined bandpass (5–40 Hz, 4th-order Butterworth) and notch 
 <span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/03-filtering_bef_aft_psd.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-bef-aft-psd" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -494,6 +502,8 @@ Figure&nbsp;3.3: Oz PSD, raw vs filtered, full session, log-y.
 <section id="before-and-after-time-domain" class="level2" data-number="3.5">
 <h2 data-number="3.5" class="anchored" data-anchor-id="before-and-after-time-domain"><span class="header-section-number">3.5</span> Before and after — time domain</h2>
 <div id="cell-fig-bef-aft-time" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>window_s, window_e <span class="op">=</span> <span class="dv">30</span> <span class="op">*</span> fs, <span class="dv">38</span> <span class="op">*</span> fs</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> np.arange(window_s, window_e) <span class="op">/</span> fs</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -507,6 +517,7 @@ Figure&nbsp;3.3: Oz PSD, raw vs filtered, full session, log-y.
 <span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/03-filtering_bef_aft_time.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-bef-aft-time" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">

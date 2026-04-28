@@ -80,7 +80,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-6029dec71651c072c732535701ccdffd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-e9a2425ed2db37d2ba9572119ae29c4e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
 <link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
@@ -138,7 +138,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full">
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
-    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./logo.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="./logo.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
     <div class="sidebar-title mb-0 py-0">
       <a href="./">br41n.io - SSVEP Data Analysis</a> 
     </div>
@@ -153,7 +157,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">About this book</span></a>
+ <span class="menu-text">About</span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -268,32 +272,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./summary.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Summary</span></span></a>
+ <span class="menu-text">Summary</span></a>
   </div>
 </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
- <span class="menu-text">Appendices</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./acronyms.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Acronyms</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./references.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">References</span></a>
   </div>
 </li>
-      </ul>
-  </li>
     </ul>
     </div>
 </nav>
@@ -347,7 +340,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="loading-and-filtering" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="loading-and-filtering"><span class="header-section-number">4.1</span> Loading and filtering</h2>
 <p>Same setup as Ch 3 — running example, filter chain applied to all eight EEG channels. CH10 (the trigger) and CH11 (the LDA output) are integer step functions; filtering would smear them, so we leave them alone.</p>
-<div id="ed069bd1" class="cell" data-execution_count="1">
+<div id="bec9056e" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.io</span>
@@ -379,6 +374,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"y shape:      </span><span class="sc">{</span>y<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"y_filt shape: </span><span class="sc">{</span>y_filt<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">  (CH2–9 filtered, CH1/CH10/CH11 untouched)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>y shape:      (11, 57697)
 y_filt shape: (11, 57697)  (CH2–9 filtered, CH1/CH10/CH11 untouched)</code></pre>
@@ -388,6 +384,8 @@ y_filt shape: (11, 57697)  (CH2–9 filtered, CH1/CH10/CH11 untouched)</code></p
 <section id="the-trigger-channel-over-time" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="the-trigger-channel-over-time"><span class="header-section-number">4.2</span> The trigger channel over time</h2>
 <div id="cell-fig-trigger-timeline" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ch10 <span class="op">=</span> y[<span class="dv">9</span>].astype(<span class="bu">int</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> np.arange(<span class="bu">len</span>(ch10)) <span class="op">/</span> fs</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -400,6 +398,7 @@ y_filt shape: (11, 57697)  (CH2–9 filtered, CH1/CH10/CH11 untouched)</code></p
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/04-epoching_trigger_timeline.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-trigger-timeline" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -417,7 +416,9 @@ Figure&nbsp;4.1: CH10 across the full session — the only document of trial str
 </section>
 <section id="detecting-trial-boundaries" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="detecting-trial-boundaries"><span class="header-section-number">4.3</span> Detecting trial boundaries</h2>
-<div id="8a002063" class="cell" data-execution_count="3">
+<div id="f5a69671" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_trials(y):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Return [(start_idx, end_idx, freq_hz), ...] from CH10 transitions."""</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    ch10 <span class="op">=</span> y[<span class="dv">9</span>].astype(<span class="bu">int</span>)</span>
@@ -435,6 +436,7 @@ Figure&nbsp;4.1: CH10 across the full session — the only document of trial str
 <span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"First five trials (start_s, end_s, duration_s, class):"</span>)</span>
 <span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> s, e, fr <span class="kw">in</span> trials[:<span class="dv">5</span>]:</span>
 <span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  (</span><span class="sc">{</span>s <span class="op">/</span> fs<span class="sc">:6.2f}</span><span class="ss">, </span><span class="sc">{</span>e <span class="op">/</span> fs<span class="sc">:6.2f}</span><span class="ss">, </span><span class="sc">{</span>(e <span class="op">-</span> s) <span class="op">/</span> fs<span class="sc">:5.2f}</span><span class="ss">, </span><span class="sc">{</span>fr<span class="sc">}</span><span class="ss">)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Trials detected: 20
 Distinct durations (s): [7.355]
@@ -451,6 +453,8 @@ First five trials (start_s, end_s, duration_s, class):
 <section id="trials-per-class" class="level2" data-number="4.4">
 <h2 data-number="4.4" class="anchored" data-anchor-id="trials-per-class"><span class="header-section-number">4.4</span> Trials per class</h2>
 <div id="cell-fig-trial-counts" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes <span class="op">=</span> <span class="bu">sorted</span>({fr <span class="cf">for</span> _, _, fr <span class="kw">in</span> trials})</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> [<span class="bu">sum</span>(<span class="dv">1</span> <span class="cf">for</span> _, _, fr <span class="kw">in</span> trials <span class="cf">if</span> fr <span class="op">==</span> c) <span class="cf">for</span> c <span class="kw">in</span> classes]</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -465,6 +469,7 @@ First five trials (start_s, end_s, duration_s, class):
 <span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/04-epoching_trial_counts.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-trial-counts" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -482,7 +487,9 @@ Figure&nbsp;4.2: Trial count per stimulation class.
 </section>
 <section id="building-the-epoch-tensor" class="level2" data-number="4.5">
 <h2 data-number="4.5" class="anchored" data-anchor-id="building-the-epoch-tensor"><span class="header-section-number">4.5</span> Building the epoch tensor</h2>
-<div id="54486ae2" class="cell" data-execution_count="5">
+<div id="70155ca7" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> epoch(y_filt, trials, eeg_idx<span class="op">=</span><span class="bu">slice</span>(<span class="dv">1</span>, <span class="dv">9</span>)):</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Stack trials into (n_trials, n_channels, n_samples). All trials must share length."""</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    lengths <span class="op">=</span> {e <span class="op">-</span> s <span class="cf">for</span> s, e, _ <span class="kw">in</span> trials}</span>
@@ -498,6 +505,7 @@ Figure&nbsp;4.2: Trial count per stimulation class.
 <span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"epochs shape: </span><span class="sc">{</span>epochs<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">  (n_trials, n_channels, n_samples)"</span>)</span>
 <span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"labels shape: </span><span class="sc">{</span>labels<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">, unique: </span><span class="sc">{</span><span class="bu">sorted</span>(<span class="bu">set</span>(labels))<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Per-trial duration: </span><span class="sc">{</span>epochs<span class="sc">.</span>shape[<span class="dv">2</span>] <span class="op">/</span> fs<span class="sc">:.2f}</span><span class="ss"> s"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>epochs shape: (20, 8, 1883)  (n_trials, n_channels, n_samples)
 labels shape: (20,), unique: [np.int64(9), np.int64(10), np.int64(12), np.int64(15)]
@@ -506,6 +514,8 @@ Per-trial duration: 7.36 s</code></pre>
 </div>
 <p>This is the artifact every later chapter consumes. <code>epochs</code> is <code>(20, 8, 1884)</code> — twenty trials × eight EEG channels × 1884 samples (≈7.36 s at 256 Hz). <code>labels</code> is <code>(20,)</code> with values in <code>{9, 10, 12, 15}</code>. Slicing this tensor is how features get computed (Ch 5), how train/test splits get made (Ch 7), and how truncated-window experiments get run (Ch 8).</p>
 <div id="cell-fig-example-epoch" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>ep <span class="op">=</span> epochs[<span class="dv">0</span>]</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>ep_label <span class="op">=</span> labels[<span class="dv">0</span>]</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> np.arange(ep.shape[<span class="dv">1</span>]) <span class="op">/</span> fs</span>
@@ -521,6 +531,7 @@ Per-trial duration: 7.36 s</code></pre>
 <span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/04-epoching_example_epoch.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-example-epoch" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">

@@ -80,7 +80,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-6029dec71651c072c732535701ccdffd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-e9a2425ed2db37d2ba9572119ae29c4e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
 <link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
@@ -138,7 +138,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full">
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
-    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./logo.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="./logo.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
     <div class="sidebar-title mb-0 py-0">
       <a href="./">br41n.io - SSVEP Data Analysis</a> 
     </div>
@@ -153,7 +157,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">About this book</span></a>
+ <span class="menu-text">About</span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -268,32 +272,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./summary.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Summary</span></span></a>
+ <span class="menu-text">Summary</span></a>
   </div>
 </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
- <span class="menu-text">Appendices</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./acronyms.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Acronyms</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./references.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">References</span></a>
   </div>
 </li>
-      </ul>
-  </li>
     </ul>
     </div>
 </nav>
@@ -346,7 +339,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="setup-load-filter-epoch" class="level2" data-number="6.1">
 <h2 data-number="6.1" class="anchored" data-anchor-id="setup-load-filter-epoch"><span class="header-section-number">6.1</span> Setup: load, filter, epoch</h2>
 <p>Same pipeline as Ch 4 + 5; reproduced here so the chapter is self-contained.</p>
-<div id="bd5fa7ca" class="cell" data-execution_count="1">
+<div id="0dfcddd9" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.io</span>
@@ -392,6 +387,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>epochs <span class="op">=</span> np.stack([y_filt[<span class="dv">1</span>:<span class="dv">9</span>, s:s <span class="op">+</span> n_samples] <span class="cf">for</span> s, _, _ <span class="kw">in</span> trials])</span>
 <span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> np.array([fr <span class="cf">for</span> _, _, fr <span class="kw">in</span> trials])</span>
 <span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"epochs: </span><span class="sc">{</span>epochs<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">, labels: </span><span class="sc">{</span>labels<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>epochs: (20, 8, 1883), labels: (20,)</code></pre>
 </div>
@@ -400,7 +396,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="reference-templates" class="level2" data-number="6.2">
 <h2 data-number="6.2" class="anchored" data-anchor-id="reference-templates"><span class="header-section-number">6.2</span> Reference templates</h2>
 <p>For each candidate stimulation frequency <em>f</em>, we build a synthetic reference signal — a small set of sines and cosines at <em>f</em> and its harmonics, sampled at the same length and rate as one epoch. CCA will then ask: which linear combination of the eight EEG channels correlates best with which linear combination of these reference signals?</p>
-<div id="482f0916" class="cell" data-execution_count="2">
+<div id="c7dab4c3" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build_template(freq, n_samples, fs, n_harmonics<span class="op">=</span>N_HARMONICS):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Return (n_samples, 2 * n_harmonics) array of sin/cos at freq, 2·freq, ..."""</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> np.arange(n_samples) <span class="op">/</span> fs</span>
@@ -409,8 +407,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        refs.append(np.sin(<span class="dv">2</span> <span class="op">*</span> np.pi <span class="op">*</span> h <span class="op">*</span> freq <span class="op">*</span> t))</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        refs.append(np.cos(<span class="dv">2</span> <span class="op">*</span> np.pi <span class="op">*</span> h <span class="op">*</span> freq <span class="op">*</span> t))</span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.stack(refs, axis<span class="op">=</span><span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 </div>
 <div id="cell-fig-template" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>template_9 <span class="op">=</span> build_template(<span class="dv">9</span>, n_samples, fs)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> np.arange(n_samples) <span class="op">/</span> fs</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -426,6 +427,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/06-template-features_template.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-template" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -444,7 +446,9 @@ Figure&nbsp;6.1: Reference template for the 9 Hz class — fundamental sin/cos p
 <section id="scoring-an-epoch-with-cca" class="level2" data-number="6.3">
 <h2 data-number="6.3" class="anchored" data-anchor-id="scoring-an-epoch-with-cca"><span class="header-section-number">6.3</span> Scoring an epoch with CCA</h2>
 <p>Canonical correlation analysis finds the linear projection of the EEG channels and the linear projection of the template that are maximally correlated. We use only the largest canonical correlation (the first component) as the per-class score.</p>
-<div id="27e70c18" class="cell" data-execution_count="4">
+<div id="3f1bc2a2" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> cca_score(X, Y):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Largest canonical correlation between X (n_samples, n_x) and Y (n_samples, n_y)."""</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    cca <span class="op">=</span> CCA(n_components<span class="op">=</span><span class="dv">1</span>, max_iter<span class="op">=</span><span class="dv">500</span>)</span>
@@ -458,8 +462,11 @@ Figure&nbsp;6.1: Reference template for the 9 Hz class — fundamental sin/cos p
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    n_samples <span class="op">=</span> X.shape[<span class="dv">0</span>]</span>
 <span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array([cca_score(X, build_template(f, n_samples, fs, n_harmonics))</span>
 <span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>                     <span class="cf">for</span> f <span class="kw">in</span> freqs])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 </div>
 <div id="cell-fig-cca-one-trial" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ti <span class="op">=</span> <span class="dv">6</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>scores <span class="op">=</span> cca_class_scores(epochs[ti], fs)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>true_label <span class="op">=</span> labels[ti]</span>
@@ -477,6 +484,7 @@ Figure&nbsp;6.1: Reference template for the 9 Hz class — fundamental sin/cos p
 <span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/06-template-features_cca_scores.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-cca-one-trial" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -495,6 +503,8 @@ Figure&nbsp;6.2: Per-class CCA scores for trial 6 — a 10 Hz trial. The true cl
 <section id="all-trials-all-classes" class="level2" data-number="6.4">
 <h2 data-number="6.4" class="anchored" data-anchor-id="all-trials-all-classes"><span class="header-section-number">6.4</span> All trials, all classes</h2>
 <div id="cell-fig-cca-matrix" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>score_mat <span class="op">=</span> np.stack([cca_class_scores(ep, fs) <span class="cf">for</span> ep <span class="kw">in</span> epochs])</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>order <span class="op">=</span> np.lexsort((np.arange(<span class="bu">len</span>(labels)), labels))</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>sorted_scores <span class="op">=</span> score_mat[order]</span>
@@ -520,6 +530,7 @@ Figure&nbsp;6.2: Per-class CCA scores for trial 6 — a 10 Hz trial. The true cl
 <span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>accuracy <span class="op">=</span> (predictions <span class="op">==</span> labels).mean()</span>
 <span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>n_correct <span class="op">=</span> (predictions <span class="op">==</span> labels).<span class="bu">sum</span>()</span>
 <span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Plain CCA argmax accuracy: </span><span class="sc">{</span>n_correct<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(labels)<span class="sc">}</span><span class="ss"> = </span><span class="sc">{</span>accuracy<span class="sc">:.0%}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-cca-matrix" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -541,7 +552,9 @@ Figure&nbsp;6.3: CCA scores for every (trial, candidate) pair. Rows are trials s
 <section id="filter-bank-cca" class="level2" data-number="6.5">
 <h2 data-number="6.5" class="anchored" data-anchor-id="filter-bank-cca"><span class="header-section-number">6.5</span> Filter-bank CCA</h2>
 <p>The standard fix is FBCCA: split the filtered EEG into multiple sub-bands, run CCA per sub-band against the same templates, and combine the per-band correlations into a single score per class. Each sub-band isolates one harmonic family — the lowest band sees the fundamental, the next band sees the second harmonic, and so on — so CCA in each band can lock onto its target without being washed out by the others.</p>
-<div id="fb506a7a" class="cell" data-execution_count="7">
+<div id="1b6ddc8f" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>SUB_BANDS <span class="op">=</span> [(<span class="dv">6</span>, <span class="dv">14</span>), (<span class="dv">14</span>, <span class="dv">22</span>), (<span class="dv">22</span>, <span class="dv">30</span>), (<span class="dv">30</span>, <span class="dv">40</span>)]</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>FBCCA_A, FBCCA_B <span class="op">=</span> <span class="fl">1.25</span>, <span class="fl">0.25</span>  <span class="co"># Chen et al. 2015 weighting parameters</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -563,8 +576,11 @@ Figure&nbsp;6.3: CCA scores for every (trial, candidate) pair. Rows are trials s
 <span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>            r <span class="op">=</span> cca_score(signal.T, Y)</span>
 <span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>            scores[fi] <span class="op">+=</span> weights[bi] <span class="op">*</span> r <span class="op">**</span> <span class="dv">2</span></span>
 <span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> scores</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 </div>
 <div id="cell-fig-fbcca-vs-cca" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ti <span class="op">=</span> <span class="dv">9</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>cca_s <span class="op">=</span> cca_class_scores(epochs[ti], fs)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>fb_s <span class="op">=</span> fbcca_class_scores(epochs[ti], fs)</span>
@@ -593,6 +609,7 @@ Figure&nbsp;6.3: CCA scores for every (trial, candidate) pair. Rows are trials s
 <span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Trial </span><span class="sc">{</span>ti<span class="sc">}</span><span class="ss"> (true = </span><span class="sc">{</span>true_label<span class="sc">}</span><span class="ss"> Hz):"</span>)</span>
 <span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  CCA   scores: </span><span class="sc">{</span><span class="bu">dict</span>(<span class="bu">zip</span>(STIM_FREQS, cca_s.<span class="bu">round</span>(<span class="dv">3</span>)))<span class="sc">}</span><span class="ss"> → pick </span><span class="sc">{</span>STIM_FREQS[cca_s.argmax()]<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  FBCCA scores: </span><span class="sc">{</span><span class="bu">dict</span>(<span class="bu">zip</span>(STIM_FREQS, fb_s.<span class="bu">round</span>(<span class="dv">3</span>)))<span class="sc">}</span><span class="ss"> → pick </span><span class="sc">{</span>STIM_FREQS[fb_s.argmax()]<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-fbcca-vs-cca" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -611,11 +628,14 @@ Figure&nbsp;6.4: Per-class scores for one of the trials plain CCA gets wrong —
   FBCCA scores: {9: np.float64(0.364), 10: np.float64(0.239), 12: np.float64(0.405), 15: np.float64(0.131)} → pick 12</code></pre>
 </div>
 </div>
-<div id="e2ed8097" class="cell" data-execution_count="9">
+<div id="009dfb17" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fb_mat <span class="op">=</span> np.stack([fbcca_class_scores(ep, fs) <span class="cf">for</span> ep <span class="kw">in</span> epochs])</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>fb_pred <span class="op">=</span> np.array([STIM_FREQS[i] <span class="cf">for</span> i <span class="kw">in</span> fb_mat.argmax(axis<span class="op">=</span><span class="dv">1</span>)])</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>fb_acc <span class="op">=</span> (fb_pred <span class="op">==</span> labels).mean()</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"FBCCA argmax accuracy: </span><span class="sc">{</span>(fb_pred <span class="op">==</span> labels)<span class="sc">.</span><span class="bu">sum</span>()<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(labels)<span class="sc">}</span><span class="ss"> = </span><span class="sc">{</span>fb_acc<span class="sc">:.0%}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>FBCCA argmax accuracy: 19/20 = 95%</code></pre>
 </div>

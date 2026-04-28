@@ -80,7 +80,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-6029dec71651c072c732535701ccdffd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-e9a2425ed2db37d2ba9572119ae29c4e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
 <link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
@@ -167,7 +167,11 @@ window.Quarto = {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full">
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
-    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./logo.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="./logo.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
     <div class="sidebar-title mb-0 py-0">
       <a href="./">br41n.io - SSVEP Data Analysis</a> 
     </div>
@@ -182,7 +186,7 @@ window.Quarto = {
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">About this book</span></a>
+ <span class="menu-text">About</span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -297,32 +301,21 @@ window.Quarto = {
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./summary.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Summary</span></span></a>
+ <span class="menu-text">Summary</span></a>
   </div>
 </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
- <span class="menu-text">Appendices</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./acronyms.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Acronyms</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./references.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">References</span></a>
   </div>
 </li>
-      </ul>
-  </li>
     </ul>
     </div>
 </nav>
@@ -375,7 +368,9 @@ window.Quarto = {
 <section id="setup" class="level2" data-number="8.1">
 <h2 data-number="8.1" class="anchored" data-anchor-id="setup"><span class="header-section-number">8.1</span> Setup</h2>
 <p>The same load → filter → epoch pipeline as the last few chapters. The epoch tensor is <code>(20, 8, 1884)</code> — 7.36 s per trial. To study epoch-length effects, we’ll truncate that third axis and re-run the classifier.</p>
-<div id="a66e061a" class="cell" data-execution_count="1">
+<div id="47442efa" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.io</span>
@@ -459,6 +454,7 @@ window.Quarto = {
 <span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a>epochs <span class="op">=</span> np.stack([y_filt[<span class="dv">1</span>:<span class="dv">9</span>, s:s <span class="op">+</span> n_samples_full] <span class="cf">for</span> s, _, _ <span class="kw">in</span> trials])</span>
 <span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> np.array([fr <span class="cf">for</span> _, _, fr <span class="kw">in</span> trials])</span>
 <span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"epochs: </span><span class="sc">{</span>epochs<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">, full trial = </span><span class="sc">{</span>n_samples_full <span class="op">/</span> fs<span class="sc">:.2f}</span><span class="ss"> s"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>epochs: (20, 8, 1883), full trial = 7.36 s</code></pre>
 </div>
@@ -467,7 +463,9 @@ window.Quarto = {
 <section id="accuracy-as-a-function-of-epoch-length" class="level2" data-number="8.2">
 <h2 data-number="8.2" class="anchored" data-anchor-id="accuracy-as-a-function-of-epoch-length"><span class="header-section-number">8.2</span> Accuracy as a function of epoch length</h2>
 <p>For each candidate epoch length L, take the first L seconds of every trial and re-run the classifier. The trials are 7.36 s, so we sweep from 1 s up to 7 s in 0.5-s steps.</p>
-<div id="ad8c9713" class="cell" data-execution_count="2">
+<div id="4930bc6e" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>WINDOW_LENGTHS <span class="op">=</span> np.arange(<span class="fl">1.0</span>, <span class="fl">7.5</span>, <span class="fl">0.5</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -483,8 +481,11 @@ window.Quarto = {
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>cca_accs <span class="op">=</span> sweep_accuracy(epochs, labels, fs, cca_predict, WINDOW_LENGTHS)</span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>fbcca_accs <span class="op">=</span> sweep_accuracy(epochs, labels, fs, fbcca_predict, WINDOW_LENGTHS)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 </div>
 <div id="cell-fig-accuracy-curve" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">4.5</span>))</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ax.plot(WINDOW_LENGTHS, cca_accs, <span class="st">"o-"</span>, label<span class="op">=</span><span class="st">"CCA argmax"</span>, lw<span class="op">=</span><span class="fl">1.5</span>, color<span class="op">=</span><span class="st">"C0"</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>ax.plot(WINDOW_LENGTHS, fbcca_accs, <span class="st">"s-"</span>, label<span class="op">=</span><span class="st">"FBCCA argmax"</span>, lw<span class="op">=</span><span class="fl">1.5</span>, color<span class="op">=</span><span class="st">"C2"</span>)</span>
@@ -498,6 +499,7 @@ window.Quarto = {
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/08-time-accuracy-itr_accuracy.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-accuracy-curve" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -520,7 +522,9 @@ Figure&nbsp;8.1: Per-trial accuracy as a function of epoch length, on the runnin
 \text{ITR} = \left[\log_2 N + p \log_2 p + (1-p) \log_2 \frac{1-p}{N-1}\right] \cdot \frac{60}{T}
 \]</span></p>
 <p>where <em>N</em> is the number of classes, <em>p</em> is the per-trial accuracy, and <em>T</em> is the time per decision in seconds. The bracketed term is the per-trial information in bits — it’s <code>log2(N)</code> (here, 2 bits) when <em>p</em> = 1, drops to 0 at chance (<em>p</em> = 1/<em>N</em>), and is undefined-but-zero in the corners. Multiplying by 60/<em>T</em> converts to bits-per-minute.</p>
-<div id="ee9d93a9" class="cell" data-execution_count="4">
+<div id="40b91676" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> wolpaw_itr(p, N, T):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""ITR in bits/minute. p=accuracy, N=number of classes, T=time per decision (s)."""</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> np.asarray(p, dtype<span class="op">=</span><span class="bu">float</span>)</span>
@@ -538,6 +542,7 @@ Figure&nbsp;8.1: Per-trial accuracy as a function of epoch length, on the runnin
 <span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  p = 0.95 at T = 7 s: ITR = </span><span class="sc">{</span>wolpaw_itr(np.array([<span class="fl">0.95</span>]), <span class="dv">4</span>, <span class="dv">7</span>)[<span class="dv">0</span>]<span class="sc">:.1f}</span><span class="ss"> bits/min"</span>)</span>
 <span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  p = 0.65 at T = 2 s: ITR = </span><span class="sc">{</span>wolpaw_itr(np.array([<span class="fl">0.65</span>]), <span class="dv">4</span>, <span class="dv">2</span>)[<span class="dv">0</span>]<span class="sc">:.1f}</span><span class="ss"> bits/min"</span>)</span>
 <span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  p = 0.50 at T = 1 s: ITR = </span><span class="sc">{</span>wolpaw_itr(np.array([<span class="fl">0.50</span>]), <span class="dv">4</span>, <span class="dv">1</span>)[<span class="dv">0</span>]<span class="sc">:.1f}</span><span class="ss"> bits/min"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>  p = 0.95 at T = 7 s: ITR = 14.0 bits/min
   p = 0.65 at T = 2 s: ITR = 15.3 bits/min
@@ -549,11 +554,16 @@ Figure&nbsp;8.1: Per-trial accuracy as a function of epoch length, on the runnin
 <section id="itr-as-a-function-of-epoch-length" class="level2" data-number="8.4">
 <h2 data-number="8.4" class="anchored" data-anchor-id="itr-as-a-function-of-epoch-length"><span class="header-section-number">8.4</span> ITR as a function of epoch length</h2>
 <p>Apply the formula at every window length we already swept, using <em>T</em> equal to the epoch length itself (i.e., assuming negligible processing delay between epochs).</p>
-<div id="1d73bce2" class="cell" data-execution_count="5">
+<div id="5175b3ac" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>cca_itr <span class="op">=</span> wolpaw_itr(cca_accs, N<span class="op">=</span><span class="dv">4</span>, T<span class="op">=</span>WINDOW_LENGTHS)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>fbcca_itr <span class="op">=</span> wolpaw_itr(fbcca_accs, N<span class="op">=</span><span class="dv">4</span>, T<span class="op">=</span>WINDOW_LENGTHS)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 </div>
 <div id="cell-fig-itr-curve" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="fl">4.5</span>))</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>ax.plot(WINDOW_LENGTHS, cca_itr, <span class="st">"o-"</span>, label<span class="op">=</span><span class="st">"CCA argmax"</span>, lw<span class="op">=</span><span class="fl">1.5</span>, color<span class="op">=</span><span class="st">"C0"</span>)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>ax.plot(WINDOW_LENGTHS, fbcca_itr, <span class="st">"s-"</span>, label<span class="op">=</span><span class="st">"FBCCA argmax"</span>, lw<span class="op">=</span><span class="fl">1.5</span>, color<span class="op">=</span><span class="st">"C2"</span>)</span>
@@ -576,6 +586,7 @@ Figure&nbsp;8.1: Per-trial accuracy as a function of epoch length, on the runnin
 <span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(best_point(WINDOW_LENGTHS, fbcca_itr, fbcca_accs, <span class="st">"FBCCA"</span>))</span>
 <span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Compare full-trial: CCA = </span><span class="sc">{</span>cca_itr[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.1f}</span><span class="ss"> bits/min, FBCCA = </span><span class="sc">{</span>fbcca_itr[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.1f}</span><span class="ss"> bits/min "</span></span>
 <span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(at T = </span><span class="sc">{</span>WINDOW_LENGTHS[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.1f}</span><span class="ss"> s, accuracies </span><span class="sc">{</span>cca_accs[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.0%}</span><span class="ss"> / </span><span class="sc">{</span>fbcca_accs[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.0%}</span><span class="ss">)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-itr-curve" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">

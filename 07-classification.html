@@ -80,7 +80,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-6029dec71651c072c732535701ccdffd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-e9a2425ed2db37d2ba9572119ae29c4e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
 <link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
@@ -138,7 +138,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full">
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
-    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      <img src="./logo.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="./logo.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
+      </a>
     <div class="sidebar-title mb-0 py-0">
       <a href="./">br41n.io - SSVEP Data Analysis</a> 
     </div>
@@ -153,7 +157,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">About this book</span></a>
+ <span class="menu-text">About</span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -268,32 +272,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./summary.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Summary</span></span></a>
+ <span class="menu-text">Summary</span></a>
   </div>
 </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
- <span class="menu-text">Appendices</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./acronyms.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Acronyms</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./references.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">References</span></a>
   </div>
 </li>
-      </ul>
-  </li>
     </ul>
     </div>
 </nav>
@@ -346,7 +339,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="setup" class="level2" data-number="7.1">
 <h2 data-number="7.1" class="anchored" data-anchor-id="setup"><span class="header-section-number">7.1</span> Setup</h2>
 <p>Same pipeline as the previous chapters, condensed. We end with three things on hand: <code>epochs</code> (the trial tensor), <code>labels</code> (the trigger truth), and <code>y</code> itself (so we can also evaluate the CH11 baseline).</p>
-<div id="3edc508a" class="cell" data-execution_count="1">
+<div id="bad482ef" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.io</span>
@@ -422,6 +417,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">"True (Hz)"</span>)</span>
 <span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>    ax.set_title(title)</span>
 <span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> im</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>epochs: (20, 8, 1883), labels: (20,)</code></pre>
 </div>
@@ -430,7 +426,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="cca-argmax-the-no-training-classifier" class="level2" data-number="7.2">
 <h2 data-number="7.2" class="anchored" data-anchor-id="cca-argmax-the-no-training-classifier"><span class="header-section-number">7.2</span> CCA argmax — the no-training classifier</h2>
 <p>The four CCA scores from Ch 6 are <em>intrinsically class-comparable</em>: each measures correlation against a known reference, so picking the highest-scoring class needs no training. The feature extractor <em>is</em> the classifier.</p>
-<div id="9384b54b" class="cell" data-execution_count="2">
+<div id="a09f6741" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build_template(freq, n_samples, fs, n_harmonics<span class="op">=</span>N_HARMONICS):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> np.arange(n_samples) <span class="op">/</span> fs</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    refs <span class="op">=</span> []</span>
@@ -455,17 +453,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>cca_pred <span class="op">=</span> np.array([STIM_FREQS[cca_class_scores(ep, fs).argmax()] <span class="cf">for</span> ep <span class="kw">in</span> epochs])</span>
 <span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>cca_acc <span class="op">=</span> (cca_pred <span class="op">==</span> labels).mean()</span>
 <span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"CCA argmax: </span><span class="sc">{</span>(cca_pred <span class="op">==</span> labels)<span class="sc">.</span><span class="bu">sum</span>()<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(labels)<span class="sc">}</span><span class="ss"> = </span><span class="sc">{</span>cca_acc<span class="sc">:.0%}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>CCA argmax: 18/20 = 90%</code></pre>
 </div>
 </div>
 <div id="cell-fig-cca-confusion" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">4</span>))</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>plot_confusion(confusion_matrix(labels, cca_pred, STIM_FREQS), STIM_FREQS,</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>               <span class="ss">f"CCA argmax — accuracy </span><span class="sc">{</span>cca_acc<span class="sc">:.0%}</span><span class="ss">"</span>, ax)</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/07-classification_cca_confusion.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-cca-confusion" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -485,7 +487,9 @@ Figure&nbsp;7.1: CCA-argmax confusion matrix. Cells show trial counts; cell shad
 <h2 data-number="7.3" class="anchored" data-anchor-id="lda-on-spectral-snr-features"><span class="header-section-number">7.3</span> LDA on spectral SNR features</h2>
 <p>CCA scores are class-comparable by construction. The spectral SNR features from Ch 5 are <em>not</em>: a row’s “SNR at 9 Hz on Oz” sits in a different coordinate from “SNR at 10 Hz on Oz”, and there’s no a priori reason their absolute values are aligned across trials and classes. A trained classifier learns that mapping. Linear discriminant analysis (LDA) — the same family of model g.tec used to produce CH11 — is the natural baseline.</p>
 <p>With only 20 trials and 64 features, we cross-validate leave-one-out: for each trial in turn, fit LDA on the other 19 and predict the held-out one.</p>
-<div id="8458e04f" class="cell" data-execution_count="4">
+<div id="1dc8b5f7" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> channel_psd(channel, fs, nperseg<span class="op">=</span>NPERSEG):</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> welch(channel, fs<span class="op">=</span>fs, nperseg<span class="op">=</span><span class="bu">min</span>(nperseg, <span class="bu">len</span>(channel)))</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -523,18 +527,22 @@ Figure&nbsp;7.1: CCA-argmax confusion matrix. Cells show trial counts; cell shad
 <span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>lda_acc <span class="op">=</span> (lda_pred <span class="op">==</span> labels).mean()</span>
 <span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"LDA on SNR features (LOO): </span><span class="sc">{</span>(lda_pred <span class="op">==</span> labels)<span class="sc">.</span><span class="bu">sum</span>()<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(labels)<span class="sc">}</span><span class="ss"> = </span><span class="sc">{</span>lda_acc<span class="sc">:.0%}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>X_snr: (20, 64)  (n_trials, n_features)
 LDA on SNR features (LOO): 11/20 = 55%</code></pre>
 </div>
 </div>
 <div id="cell-fig-lda-confusion" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">4</span>))</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>plot_confusion(confusion_matrix(labels, lda_pred, STIM_FREQS), STIM_FREQS,</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>               <span class="ss">f"LDA on SNR — accuracy </span><span class="sc">{</span>lda_acc<span class="sc">:.0%}</span><span class="ss">"</span>, ax)</span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/07-classification_lda_confusion.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-lda-confusion" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -553,7 +561,9 @@ Figure&nbsp;7.2: LDA on SNR features — leave-one-out predictions.
 <section id="the-ch11-baseline" class="level2" data-number="7.4">
 <h2 data-number="7.4" class="anchored" data-anchor-id="the-ch11-baseline"><span class="header-section-number">7.4</span> The CH11 baseline</h2>
 <p>CH11 is the LDA-class index that g.tec’s analysis tool wrote into the dataset at recording time — our shipped baseline. It fires intermittently (only when its confidence crosses a threshold), so per-trial prediction is the <em>mode</em> of the non-zero values within the trial window. The class indices map to frequencies via the parameters panel from Ch 1: <code>1 → 15 Hz, 2 → 12, 3 → 10, 4 → 9</code>.</p>
-<div id="cce780a4" class="cell" data-execution_count="6">
+<div id="a2cb015a" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>CH11_TO_HZ <span class="op">=</span> {<span class="dv">1</span>: <span class="dv">15</span>, <span class="dv">2</span>: <span class="dv">12</span>, <span class="dv">3</span>: <span class="dv">10</span>, <span class="dv">4</span>: <span class="dv">9</span>}</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -573,17 +583,21 @@ Figure&nbsp;7.2: LDA on SNR features — leave-one-out predictions.
 <span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>ch11_pred <span class="op">=</span> ch11_predict(y, trials)</span>
 <span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>ch11_acc <span class="op">=</span> (ch11_pred <span class="op">==</span> labels).mean()</span>
 <span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"CH11 (mode of non-zero samples): </span><span class="sc">{</span>(ch11_pred <span class="op">==</span> labels)<span class="sc">.</span><span class="bu">sum</span>()<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span><span class="bu">len</span>(labels)<span class="sc">}</span><span class="ss"> = </span><span class="sc">{</span>ch11_acc<span class="sc">:.0%}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>CH11 (mode of non-zero samples): 11/20 = 55%</code></pre>
 </div>
 </div>
 <div id="cell-fig-ch11-confusion" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">4</span>))</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>plot_confusion(confusion_matrix(labels, ch11_pred, STIM_FREQS), STIM_FREQS,</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>               <span class="ss">f"CH11 — accuracy </span><span class="sc">{</span>ch11_acc<span class="sc">:.0%}</span><span class="ss">"</span>, ax)</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/07-classification_ch11_confusion.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-ch11-confusion" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -601,7 +615,9 @@ Figure&nbsp;7.3: CH11 baseline — per-trial mode of non-zero samples.
 </section>
 <section id="three-way-comparison" class="level2" data-number="7.5">
 <h2 data-number="7.5" class="anchored" data-anchor-id="three-way-comparison"><span class="header-section-number">7.5</span> Three-way comparison</h2>
-<div id="4c000e46" class="cell" data-execution_count="8">
+<div id="c77f564e" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fbcca_class_scores(epoch, fs, freqs<span class="op">=</span>STIM_FREQS, sub_bands<span class="op">=</span>SUB_BANDS,</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>                       a<span class="op">=</span><span class="fl">1.25</span>, b<span class="op">=</span><span class="fl">0.25</span>, n_harmonics<span class="op">=</span>N_HARMONICS):</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    n_samples <span class="op">=</span> epoch.shape[<span class="dv">1</span>]</span>
@@ -624,11 +640,14 @@ Figure&nbsp;7.3: CH11 baseline — per-trial mode of non-zero samples.
 <span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>methods <span class="op">=</span> [<span class="st">"CH11"</span>, <span class="st">"LDA on SNR"</span>, <span class="st">"CCA argmax"</span>, <span class="st">"FBCCA argmax"</span>]</span>
 <span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>accs <span class="op">=</span> [ch11_acc, lda_acc, cca_acc, fbcca_acc]</span>
 <span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>({m: <span class="ss">f"</span><span class="sc">{</span>a<span class="sc">:.0%}</span><span class="ss">"</span> <span class="cf">for</span> m, a <span class="kw">in</span> <span class="bu">zip</span>(methods, accs)})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>{'CH11': '55%', 'LDA on SNR': '55%', 'CCA argmax': '90%', 'FBCCA argmax': '95%'}</code></pre>
 </div>
 </div>
 <div id="cell-fig-comparison" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">"lightgray"</span>, <span class="st">"lightgray"</span>, <span class="st">"C2"</span>, <span class="st">"C2"</span>]</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>bars <span class="op">=</span> ax.bar(methods, accs, color<span class="op">=</span>colors)</span>
@@ -643,6 +662,7 @@ Figure&nbsp;7.3: CH11 baseline — per-trial mode of non-zero samples.
 <span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
 <span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"images/07-classification_comparison.png"</span>, dpi<span class="op">=</span><span class="dv">200</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
 <span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-display">
 <div id="fig-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
