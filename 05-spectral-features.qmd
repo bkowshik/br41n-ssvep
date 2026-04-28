@@ -1,10 +1,10 @@
 ---
 title: "Spectral Features"
-description: "Sample each epoch's PSD at the candidate stim frequencies and their harmonics to build a (trials × features) matrix."
+description: "Sample each epoch's PSD at the candidate stimulation frequencies and their harmonics to build a (trials × features) matrix."
 date-modified: 2026-04-26
 ---
 
-> Turn each epoch into a feature vector a classifier can use. The most direct route for SSVEP: compute a PSD per epoch, sample the amplitude at each candidate stim frequency and its harmonics, and stack those into a feature row.
+> Turn each epoch into a feature vector a classifier can use. The most direct route for SSVEP: compute a PSD per epoch, sample the amplitude at each candidate stimulation frequency and its harmonics, and stack those into a feature row.
 
 ## Setup: load, filter, epoch
 
@@ -17,6 +17,8 @@ import scipy.io
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from scipy.signal import welch, butter, filtfilt, iirnotch
+import mne
+mne.set_log_level("WARNING")
 
 DATA_DIR = Path("data")
 EEG_LABELS = ["PO7", "PO3", "POz", "PO4", "PO8", "O1", "Oz", "O2"]
@@ -87,11 +89,17 @@ print(f"Feature vector for epochs[0]: shape = {epoch_features(epochs[0], fs).sha
 
 ```{python}
 #| label: fig-one-trial-channels
-#| fig-cap: "Per-channel PSD for one epoch (15 Hz class). Red dashed lines mark the four fundamentals; black dotted lines mark the four second harmonics. The classifier sees the PSD value at each of these eight frequencies on each of the eight channels."
+#| fig-cap: "Per-channel PSD for one epoch (15 Hz class). Red dashed lines mark the four fundamentals; green dotted lines mark the four second harmonics. The classifier sees the PSD value at each of these eight frequencies on each of the eight channels."
 
 ep_idx = 0
 ep = epochs[ep_idx]
 ep_label = labels[ep_idx]
+
+# (channel index, freq to mark, label, text offset in points)
+HIGHLIGHTS = [
+    (6, 15, "clean f", (14, 6)),       # Oz — fundamental
+    (7, 30, "2f dominates", (-78, 0)), # O2 — harmonic flip
+]
 
 fig, axes = plt.subplots(2, 4, figsize=(14, 6), sharey=True)
 for ci, ax in enumerate(axes.ravel()):
@@ -99,7 +107,16 @@ for ci, ax in enumerate(axes.ravel()):
     ax.plot(ff, pxx, lw=0.9)
     for f in STIM_FREQS:
         ax.axvline(f, color="C3", ls="--", alpha=0.6, lw=0.9)
-        ax.axvline(2 * f, color="k", ls=":", alpha=0.55, lw=0.9)
+        ax.axvline(2 * f, color="C2", ls=":", alpha=0.9, lw=1.1)
+    for h_ci, h_f, h_label, h_off in HIGHLIGHTS:
+        if h_ci == ci:
+            bin_i = np.argmin(np.abs(ff - h_f))
+            ax.annotate(
+                h_label, xy=(ff[bin_i], pxx[bin_i]),
+                xytext=h_off, textcoords="offset points",
+                fontsize=8, color="0.2",
+                arrowprops=dict(arrowstyle="->", lw=0.8, color="0.2"),
+            )
     ax.set_xlim(5, 35)
     ax.set_title(EEG_LABELS[ci], fontsize=9)
     ax.tick_params(labelsize=7)
@@ -113,13 +130,100 @@ fig.savefig("images/05-spectral-features_one_trial.png", dpi=200, bbox_inches="t
 plt.show()
 ```
 
-For this 15 Hz trial the cleanest peaks at 15 Hz are on Oz and O2 — exactly where you'd expect retinotopically. The other channels have power at 15 Hz too, just smaller. The harmonic at 30 Hz is barely there, which matches the chapter-2 finding that 15 Hz on this subject doesn't drive a strong harmonic. Sampling at expected frequencies — rather than feeding the entire 5–40 Hz spectrum to the classifier — collapses each PSD to a small, physically meaningful number of values: it bakes in what we know about the experiment, gives the model fewer features to overfit to, and is robust to per-trial scaling differences.
+For this 15 Hz trial the cleanest peaks at 15 Hz are on Oz, O1, PO7 and PO3 — occipital and left-lateralized. The right-side channels (O2, PO8) have a fat neighbourhood around 15 Hz that almost swallows the peak. Strikingly, the 30 Hz harmonic flips the picture: it's small on the left channels but *dominant* on the right (on O2 and PO8 the 30 Hz peak is more than twice the 15 Hz fundamental). So the fundamental and the harmonic carry different spatial information on the same trial — another reason to keep all eight channels and both harmonics in the feature vector rather than betting everything on Oz at *f*.
+
+The same eight numbers, viewed on the scalp, make this even more vivid:
+
+```{python}
+#| label: fig-topomap-f-2f
+#| fig-cap: "Scalp topography of band power for the same epoch, restricted to the convex hull of the eight electrodes and on a shared colour scale so the two bands are directly comparable. Left: the 15 Hz fundamental sits broadly across occipital cortex with a left bias. Right: the 30 Hz harmonic is sharply lateralized to the right (O2/PO8) and outside that hot spot is *weaker* than the fundamental."
+
+ff_ch, pxx_ch = welch(ep, fs=fs, nperseg=min(NPERSEG, ep.shape[1]))
+p15 = pxx_ch[:, np.argmin(np.abs(ff_ch - 15))]
+p30 = pxx_ch[:, np.argmin(np.abs(ff_ch - 30))]
+
+info = mne.create_info(ch_names=EEG_LABELS, sfreq=fs, ch_types="eeg")
+info.set_montage(mne.channels.make_standard_montage("standard_1020"))
+
+vmax = max(p15.max(), p30.max())
+fig, axes = plt.subplots(1, 2, figsize=(9, 4.5))
+for ax, vals, title in [(axes[0], p15, "Power at 15 Hz (f)"),
+                         (axes[1], p30, "Power at 30 Hz (2f)")]:
+    im, _ = mne.viz.plot_topomap(vals, info, axes=ax, show=False,
+                                  names=EEG_LABELS, cmap="viridis",
+                                  contours=4, sensors=True,
+                                  extrapolate="local",
+                                  vlim=(0, vmax))
+    ax.set_title(title, fontsize=10)
+fig.colorbar(im, ax=axes, fraction=0.04, pad=0.04, label="Power (shared scale)")
+fig.suptitle(f"Trial {ep_idx} — {ep_label} Hz stim — scalp topography", fontsize=10)
+fig.savefig("images/05-spectral-features_topomap.png", dpi=200, bbox_inches="tight")
+plt.show()
+```
+
+A static topography averages over the whole 7.5 s epoch and hides any time evolution. Sliding a short window through the trial and re-rendering both topomaps frame-by-frame shows where and when the response actually builds up.
+
+```{python}
+#| include: false
+
+import matplotlib.animation as animation
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
+
+WIN_S, HOP_S = 1.5, 0.5
+win_n = int(WIN_S * fs)
+hop_n = int(HOP_S * fs)
+n_frames = (ep.shape[1] - win_n) // hop_n + 1
+
+p15_t = np.zeros((n_frames, 8))
+p30_t = np.zeros((n_frames, 8))
+t_mid = np.zeros(n_frames)
+for fi in range(n_frames):
+    s, e = fi * hop_n, fi * hop_n + win_n
+    t_mid[fi] = (s + e) / 2 / fs
+    ff_w, pxx_w = welch(ep[:, s:e], fs=fs, nperseg=min(256, win_n))
+    p15_t[fi] = pxx_w[:, np.argmin(np.abs(ff_w - 15))]
+    p30_t[fi] = pxx_w[:, np.argmin(np.abs(ff_w - 30))]
+
+vmax_t = float(max(p15_t.max(), p30_t.max()))
+
+fig_anim, axes_anim = plt.subplots(1, 2, figsize=(8, 4))
+sm = ScalarMappable(norm=Normalize(0, vmax_t), cmap="viridis")
+fig_anim.colorbar(sm, ax=axes_anim, fraction=0.04, pad=0.04,
+                  label="Power (shared scale)")
+
+
+def render_frame(fi):
+    for ax in axes_anim:
+        ax.clear()
+    for ax, vals, title in [(axes_anim[0], p15_t[fi], "15 Hz (f)"),
+                             (axes_anim[1], p30_t[fi], "30 Hz (2f)")]:
+        mne.viz.plot_topomap(vals, info, axes=ax, show=False,
+                              cmap="viridis", contours=4, sensors=True,
+                              extrapolate="local", vlim=(0, vmax_t))
+        ax.set_title(title, fontsize=10)
+    fig_anim.suptitle(
+        f"Trial {ep_idx} ({ep_label} Hz stim) — "
+        f"window centered at t = {t_mid[fi]:.2f}s",
+        fontsize=10,
+    )
+    return axes_anim
+
+
+ani = animation.FuncAnimation(fig_anim, render_frame, frames=n_frames, interval=500)
+ani.save("images/05-spectral-features_topomap_anim.gif", writer="pillow", fps=2)
+plt.close(fig_anim)
+```
+
+![Sliding 1.5 s window (0.5 s hop) through the 7.5 s trial. Both panels share a colour scale derived from the per-window maximum across both bands, so brightness is directly comparable across frames and bands. The 15 Hz response appears almost immediately and stays broadly distributed; the 30 Hz response builds up later and concentrates on the right occipital electrodes.](images/05-spectral-features_topomap_anim.gif){#fig-topomap-anim}
+
+Sampling at expected frequencies — rather than feeding the entire 5–40 Hz spectrum to the classifier — collapses each PSD to a small, physically meaningful number of values: it bakes in what we know about the experiment, gives the model fewer features to overfit to, and is robust to per-trial scaling differences.
 
 ## The feature matrix for a whole session
 
 ```{python}
 feat_matrix = np.stack([epoch_features(epochs[i], fs) for i in range(len(epochs))])
-print(f"feat_matrix shape: {feat_matrix.shape}  (n_trials, n_channels × n_stim × n_harmonics)")
+print(f"feat_matrix shape: {feat_matrix.shape}  (n_trials, n_channels × n_stimulation_frequencies × n_harmonics)")
 ```
 
 ```{python}
@@ -130,7 +234,7 @@ order = np.lexsort((np.arange(len(labels)), labels))
 sorted_feat = feat_matrix[order]
 sorted_labels = labels[order]
 
-n_per_block = 8  # 8 channels sampled at each (stim freq, harmonic)
+n_per_block = 8  # 8 channels sampled at each (stimulation frequency, harmonic)
 group_labels = [f"{h * f} Hz" for f in STIM_FREQS for h in HARMONICS]
 
 fig, ax = plt.subplots(figsize=(13, 5))
@@ -159,6 +263,48 @@ How to read this heatmap: each row is one trial, each column is one of the 64 fe
 Class structure shows up as bright cells lining up along the column whose frequency matches the row's class. The top five rows (9 Hz) are brightest in the **9 Hz** column block — exactly where you'd expect — and you can also see them light up in the **18 Hz** column block, which is the second harmonic. That's the harmonics earning their place in the feature vector: they fire independently of the fundamental, adding evidence rather than duplicating it. The 10 Hz row block follows the same pattern at 10 and 20 Hz. Where the eye can already separate the classes from the matrix alone, a linear classifier almost certainly can too.
 
 The 12 and 15 Hz row blocks look noticeably dimmer than 9 and 10 Hz — same story as Ch 2: those classes have weaker raw-power features on this subject (12 Hz overlaps with alpha, 15 Hz drives a smaller harmonic). The classifier has less to work with there.
+
+## A strawman classifier
+
+Before reaching for fancier features, ask the simplest possible question: how far does raw power on its own get you? For each trial, sum the feature row over channels and harmonics per stimulation frequency, then pick the frequency with the most total power. No training, no normalization, no model — pure argmax over the matrix above.
+
+```{python}
+power_per_freq = feat_matrix.reshape(
+    len(epochs), len(EEG_LABELS), len(STIM_FREQS), len(HARMONICS)
+).sum(axis=(1, 3))
+naive_pred = np.array([STIM_FREQS[i] for i in power_per_freq.argmax(axis=1)])
+naive_acc = (naive_pred == labels).mean()
+print(f"Raw-power argmax: {(naive_pred == labels).sum()}/{len(labels)} = {naive_acc:.0%}")
+```
+
+```{python}
+#| label: fig-naive-confusion
+#| fig-cap: "Raw-power argmax — confusion matrix. Cells show trial counts; shading is row-normalized."
+
+cm = np.zeros((len(STIM_FREQS), len(STIM_FREQS)), dtype=int)
+for t, p in zip(labels, naive_pred):
+    cm[STIM_FREQS.index(int(t)), STIM_FREQS.index(int(p))] += 1
+cm_norm = cm / np.maximum(cm.sum(axis=1, keepdims=True), 1)
+
+fig, ax = plt.subplots(figsize=(5, 4))
+ax.imshow(cm_norm, cmap="Blues", vmin=0, vmax=1)
+for i in range(len(STIM_FREQS)):
+    for j in range(len(STIM_FREQS)):
+        ax.text(j, i, f"{cm[i, j]}", ha="center", va="center", fontsize=10,
+                color="white" if cm_norm[i, j] > 0.5 else "black")
+ax.set_xticks(range(len(STIM_FREQS)))
+ax.set_xticklabels([str(f) for f in STIM_FREQS])
+ax.set_yticks(range(len(STIM_FREQS)))
+ax.set_yticklabels([str(f) for f in STIM_FREQS])
+ax.set_xlabel("Predicted (Hz)")
+ax.set_ylabel("True (Hz)")
+ax.set_title(f"Raw-power argmax — accuracy {naive_acc:.0%}")
+fig.tight_layout()
+fig.savefig("images/05-spectral-features_naive_confusion.png", dpi=200, bbox_inches="tight")
+plt.show()
+```
+
+The diagonal is uneven. Classes whose fundamental sits inside the alpha band bleed into each other in the predictable way: raw power can't tell a true 10 Hz SSVEP peak apart from spontaneous 10 Hz alpha — both are just a bin with high power. Something needs to weigh peaks against their local background, not just measure their absolute height.
 
 ## SNR features
 
@@ -210,6 +356,10 @@ print(f"  SNR  =  {target_p:.2f} / {neigh_mean:.2f}  =  {target_p / neigh_mean:.
 ```
 
 The target sits about 3× above its background — that's the SNR feature value for this single cell. The same calculation runs across all 64 (channel × frequency) entries of the matrix.
+
+::: {.callout-note}
+**Why ±2.5 Hz for the neighbourhood?** A balance between two pressures. *Wide enough* to span the alpha bump (itself ~2–3 Hz wide) so alpha doesn't get counted as "signal" sitting right next to its target, and to leave enough bins for a stable noise mean. *Narrow enough* that EEG's 1/f tilt doesn't average across very different noise regimes (the floor at 9 Hz is genuinely higher than at 30 Hz), and to keep the band clear of neighbouring harmonic families — for f = 15 Hz, the 12.5–17.5 Hz neighbourhood stops short of 18 Hz, which is the 2*f* harmonic of the 9 Hz class. The ±0.6 Hz exclusion carves out the target peak itself plus its Welch-leakage skirts. Adjacent stim classes are as close as 1 Hz apart, so other stim frequencies do fall inside the band — that's fine because only one class is driven per trial, so there's no rival peak to pollute the estimate.
+:::
 
 What does the transformation actually *do*? Take a contrasting cell from the same trial: the 12 Hz feature on Oz has raw power 1.89 (small) but its neighbourhood includes the alpha bump near 10 Hz, so the neighbour mean is 6.13. Their ratio is 0.31 — well below 1, signalling "this bin sits *below* its surroundings", i.e. there is no SSVEP peak at 12 Hz on this trial. Raw power can't make that distinction; SNR can. The cell's pre/post values: raw = 1.89, SNR = 0.31. Both numbers go into the heatmap as "low", but the SNR version is more committed about it.
 

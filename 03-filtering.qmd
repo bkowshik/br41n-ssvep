@@ -33,6 +33,8 @@ print(f"Power at 0.5 Hz: {pxx_raw[np.argmin(np.abs(ff_raw - 0.5))]:.1f}")
 print(f"Power at 50 Hz : {pxx_raw[np.argmin(np.abs(ff_raw - 50))]:.4f}")
 ```
 
+Welch's bin width is `fs / nperseg` — a longer segment buys finer frequency resolution at the cost of fewer segments to average, trading variance for sharpness. The window length chosen here keeps bins narrow enough that the four stimulation frequencies fall cleanly into distinct bins.
+
 ```{python}
 #| label: fig-raw-psd
 #| fig-cap: "Long-window PSD on Oz, full session, log-y axis."
@@ -51,7 +53,7 @@ fig.savefig("images/03-filtering_raw_psd.png", dpi=200, bbox_inches="tight")
 plt.show()
 ```
 
-Two things stand out in the raw spectrum, neither of them the SSVEP. The biggest peak is at 0.5 Hz — slow baseline drift, amplified by the 1/f power law that EEG follows. Above ~40 Hz the spectrum drops off into the noise floor; the 50 Hz line-frequency spike that's typically conspicuous in raw EEG isn't there at all (power ≈ 0). The g.tec amplifier almost certainly applied its own front-end filtering before writing the file — convenient, but we'll still design a notch for the same reason cars have seatbelts. The four stimulation frequencies (red dashes) sit inside the alpha band and are barely distinguishable from the background.
+Two things stand out in the raw spectrum, neither of them the SSVEP. The biggest peak is at 0.5 Hz — slow baseline drift, amplified by the 1/f power law that EEG follows. Above ~40 Hz the spectrum drops off into the noise floor; the 50 Hz line-frequency spike that's typically conspicuous in raw EEG isn't there at all (power ≈ 0). The g.tec amplifier almost certainly applied its own front-end filtering before writing the file — convenient, but we'll still design a notch for the same reason cars have seatbelts. The four stimulation frequencies (red dashes) sit inside the alpha band (8–13 Hz) and are barely distinguishable from the background.
 
 ## Designing the filter
 
@@ -144,10 +146,118 @@ fig.savefig("images/03-filtering_bef_aft_time.png", dpi=200, bbox_inches="tight"
 plt.show()
 ```
 
-The raw trace wanders around a slowly-shifting baseline (that's the 0.5 Hz drift); the filtered trace sits cleanly around zero. The fast oscillations — the part that actually carries the SSVEP — look effectively identical. Removing the drift matters most for time-domain features (per-trial means and amplitudes) and for any feature that's sensitive to absolute level; for spectral features it's almost cosmetic.
+The raw trace wanders around a slowly-shifting baseline — the few slow cycles you can count across the window are consistent with the sub-1 Hz drift the PSD flagged — while the filtered trace sits cleanly around zero. The fast oscillations — the part that actually carries the SSVEP — look effectively identical. Removing the drift matters most for time-domain features (per-trial means and amplitudes) and for any feature that's sensitive to absolute level; for spectral features it's almost cosmetic.
 
 ## Why this is enough — and what it doesn't fix
 
 Compared to motor-imagery or P300 paradigms, SSVEP needs almost no preprocessing. The response is generated in a small, well-localized region of cortex (V1/V2), it's narrowband and phase-locked to the stimulus, and the band it lives in (~9–30 Hz including harmonics) doesn't overlap with the worst contaminants — eye blinks live below 4 Hz and muscle activity above 40 Hz, both safely outside the passband. Heavy artifact removal (ICA, regression-based EOG correction, full re-referencing pipelines) is overkill here and risks subtracting out signal you wanted to keep.
 
-What filtering on this file *doesn't* fix is the alpha rhythm sitting on top of the lower stim frequencies (9, 10, 12 Hz) — that's a within-passband collision and no linear filter will untangle it. Two later chapters handle it differently. Ch 5 builds SNR features that normalize each peak by its neighbourhood, so an alpha bump that's tall but flanked by similarly tall bins gets deflated relative to a peak that genuinely stands out. Ch 6 takes a phase-aware route: CCA against sine/cosine references at the stim frequencies. The SSVEP is phase-locked to the LED, alpha isn't, so the correlation with a 10 Hz template behaves very differently for an actual 10 Hz stim trial than it does for spontaneous 10 Hz alpha — even though both have a peak at 10 Hz in the PSD.
+What filtering on this file *doesn't* fix is the alpha rhythm sitting on top of the lower stimulation frequencies (9, 10, 12 Hz) — that's a within-passband collision and no linear filter will untangle it. Two later chapters handle it differently. Ch 5 builds SNR features that normalize each peak by its neighbourhood, so an alpha bump that's tall but flanked by similarly tall bins gets deflated relative to a peak that genuinely stands out. Ch 6 takes a phase-aware route: CCA against sine/cosine references at the stimulation frequencies. The **SSVEP is phase-locked to the LED, alpha isn't**, so the correlation with a 10 Hz template behaves very differently for an actual 10 Hz stimulation trial than it does for spontaneous 10 Hz alpha — even though both have a peak at 10 Hz in the PSD.
+
+## Frequency vs phase — a small demo
+
+To make the phase point concrete, here's a small synthetic demo: two sets of trials, every trial a 10 Hz sinusoid in noise. In one set every trial starts at the same phase — the SSVEP analogue, locked to a stimulus. In the other, each trial's starting phase is drawn uniformly at random — the alpha analogue, spontaneous and unanchored.
+
+```{python}
+rng = np.random.default_rng(0)
+T_DEMO, F_DEMO, N_TRIALS_DEMO, NOISE_DEMO = 2.0, 10.0, 10, 0.4
+N_DEMO = int(T_DEMO * fs)
+t_demo = np.arange(N_DEMO) / fs
+
+ssvep_trials = np.array([
+    np.sin(2 * np.pi * F_DEMO * t_demo) + NOISE_DEMO * rng.standard_normal(N_DEMO)
+    for _ in range(N_TRIALS_DEMO)
+])
+alpha_trials = np.array([
+    np.sin(2 * np.pi * F_DEMO * t_demo + rng.uniform(0, 2 * np.pi))
+    + NOISE_DEMO * rng.standard_normal(N_DEMO)
+    for _ in range(N_TRIALS_DEMO)
+])
+ssvep_avg = ssvep_trials.mean(axis=0)
+alpha_avg = alpha_trials.mean(axis=0)
+```
+
+```{python}
+#| label: fig-phase-demo
+#| fig-cap: "Two sets of synthetic 10 Hz trials in noise. Top: individual trials overlaid. Bottom: the trial-average. The phase-locked mean preserves the oscillation; the random-phase mean collapses toward zero."
+
+fig, axes = plt.subplots(2, 2, figsize=(12, 5), sharex=True, sharey=True)
+for ax in axes.ravel():
+    ax.axhline(0, color="gray", lw=0.5, alpha=0.5)
+
+for trial in ssvep_trials:
+    axes[0, 0].plot(t_demo, trial, lw=0.8, alpha=0.4)
+for trial in alpha_trials:
+    axes[0, 1].plot(t_demo, trial, lw=0.8, alpha=0.4)
+axes[0, 0].set_title("Phase-locked — individual trials")
+axes[0, 1].set_title("Random-phase — individual trials")
+
+axes[1, 0].plot(t_demo, ssvep_avg, lw=1.5, color="C0")
+axes[1, 1].plot(t_demo, alpha_avg, lw=1.5, color="C1")
+axes[1, 0].set_title(f"Trial-average (n = {N_TRIALS_DEMO})")
+axes[1, 1].set_title(f"Trial-average (n = {N_TRIALS_DEMO})")
+
+for ax in axes[1, :]:
+    ax.set_xlabel("Time (s)")
+for ax in axes[:, 0]:
+    ax.set_ylabel("Amplitude")
+fig.tight_layout()
+fig.savefig("images/03-filtering_phase_demo.png", dpi=200, bbox_inches="tight")
+plt.show()
+```
+
+Individually, every trial in either column is a 10 Hz oscillation in noise — a per-trial PSD would put a peak at 10 Hz for both, and a frequency-only feature would call them indistinguishable. The difference only emerges once trials are combined: phase-locked trials reinforce each other and the average preserves the oscillation, while random-phase trials interfere destructively and the average collapses toward zero. The PSD discards exactly the information — phase — that separates the two. Methods that keep it (trial-averaging, template correlation, coherence with a stimulus reference) have something extra to work with; methods that don't, don't. Ch 6 develops this into a working classifier.
+
+To check whether the same effect actually shows up on the running session, swap the synthetic trials for the real ones. Bandpass Oz tightly around 10 Hz to isolate the alpha/SSVEP-at-10-Hz band, then for each of the five 10 Hz trials take two paired segments of equal length: the trial itself starting at the CH10 trigger edge (the SSVEP candidate) and the rest window immediately before that trigger (the alpha candidate, since the LED is still off and there's no shared zero-time tying alpha to anything). Same n on both sides keeps the averaging comparison fair.
+
+```{python}
+bp_alpha = butter(4, [8, 12], btype="band", fs=fs)
+oz_alpha = filtfilt(*bp_alpha, y[OZ].astype(float))
+
+ch10 = y[9].astype(int)
+edges = np.diff((ch10 != 0).astype(int))
+trial_starts = np.where(edges == 1)[0] + 1
+trial_ends = np.where(edges == -1)[0] + 1
+
+inter_trial_gaps = trial_starts[1:] - trial_ends[:-1]
+SEG_LEN = int(inter_trial_gaps.min())  # rest-gap length, set by the g.tec schedule
+
+ten_hz_starts = [s for s in trial_starts if ch10[s] == 10]
+ssvep_real = np.array([oz_alpha[s:s + SEG_LEN] for s in ten_hz_starts])
+alpha_real = np.array([oz_alpha[s - SEG_LEN:s] for s in ten_hz_starts if s >= SEG_LEN])
+print(f"Segment length: {SEG_LEN / fs:.2f} s")
+print(f"ssvep_real: {ssvep_real.shape}, alpha_real: {alpha_real.shape}")
+```
+
+```{python}
+#| label: fig-phase-demo-real
+#| fig-cap: "Same demo on the running session: Oz bandpassed at 8–12 Hz. Left: 10 Hz stimulation trials aligned to CH10 trigger onset. Right: inter-trial rest segments aligned to end-of-previous-trial. Top row: individual segments overlaid. Bottom row: their averages."
+
+t_seg = np.arange(SEG_LEN) / fs
+
+fig, axes = plt.subplots(2, 2, figsize=(12, 5), sharex=True, sharey=True)
+for ax in axes.ravel():
+    ax.axhline(0, color="gray", lw=0.5, alpha=0.5)
+
+for seg in ssvep_real:
+    axes[0, 0].plot(t_seg, seg, lw=0.8, alpha=0.5)
+for seg in alpha_real:
+    axes[0, 1].plot(t_seg, seg, lw=0.8, alpha=0.5)
+axes[0, 0].set_title(f"10 Hz trials — individual (n = {len(ssvep_real)}, Oz, 8–12 Hz)")
+axes[0, 1].set_title(f"Pre-trial rest — individual (n = {len(alpha_real)}, Oz, 8–12 Hz)")
+
+axes[1, 0].plot(t_seg, ssvep_real.mean(axis=0), lw=1.5, color="C0")
+axes[1, 1].plot(t_seg, alpha_real.mean(axis=0), lw=1.5, color="C1")
+axes[1, 0].set_title(f"Trial-average (n = {len(ssvep_real)})")
+axes[1, 1].set_title(f"Rest-period average (n = {len(alpha_real)})")
+
+for ax in axes[1, :]:
+    ax.set_xlabel("Time from segment start (s)")
+for ax in axes[:, 0]:
+    ax.set_ylabel("Amplitude (µV)")
+fig.tight_layout()
+fig.savefig("images/03-filtering_phase_demo_real.png", dpi=200, bbox_inches="tight")
+plt.show()
+```
+
+How clean the contrast looks depends on the session. The trial-average should preserve a visible 10 Hz oscillation across cycles; the rest-average — same n, same length, just no trigger-anchored signal underneath — should sit closer to zero, with no consistent phase to lock onto. If the rest-average still wobbles, that's expected at n = 5: alpha doesn't cancel hard with so few segments, and on this subject the alpha rhythm is weaker than on the alpha-dominated subject 1 used in Ch 2 — so there's less amplitude for destructive interference to cancel in the first place. Whatever the visible margin, it's the dataset's own version of the synthetic demo above. Ch 6 develops this into a working classifier.

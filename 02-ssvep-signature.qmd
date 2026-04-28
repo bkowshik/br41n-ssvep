@@ -10,7 +10,7 @@ date-modified: 2026-04-26
 
 The book's running example is `subject_2_fvep_led_training_2.mat` — the cleanest of the four sessions for downstream work. This chapter is the one exception: it uses `subject_1_fvep_led_training_1.mat` instead, and it's worth saying why.
 
-The four stimulation frequencies (9, 10, 12, 15 Hz) overlap with the alpha rhythm (8–12 Hz), a strong natural occipital oscillation that's there whether or not the LED is flickering. In raw, unfiltered PSDs that means the peak we *want* to see (the SSVEP at the stim frequency) competes with the peak we don't (alpha at ~10 Hz). On the running file, alpha wins on most classes — the 12 Hz class on Oz, for example, has alpha twice as tall as the stim peak. A "see the SSVEP peak" demo on that file would mostly show alpha.
+The four stimulation frequencies (9, 10, 12, 15 Hz) overlap with the alpha rhythm (8–12 Hz), a strong natural occipital oscillation that's there whether or not the LED is flickering. In raw, unfiltered PSDs that means the peak we *want* to see (the SSVEP at the stimulation frequency) competes with the peak we don't (alpha at ~10 Hz). On the running file, alpha wins on most classes — the 12 Hz class on Oz, for example, has alpha twice as tall as the stimulation peak. A "see the SSVEP peak" demo on that file would mostly show alpha.
 
 `subject_1_fvep_led_training_1.mat` shows the SSVEP rising above alpha on Oz for every class, so the raw-data demos work visually. The file does have the broken LDA (CH11 stuck on class 3) flagged in Ch 1 — irrelevant here, since this chapter doesn't use CH11. The running example resumes from Ch 3 onward, once filtering takes alpha out of the picture.
 
@@ -140,10 +140,10 @@ ax.set_xlim(5, 35)
 ax.set_xlabel("Frequency (Hz)")
 ax.set_ylabel("Power")
 ax.set_title("Oz, average PSD across 5 trials per class")
-ax.legend(title="Stim freq")
+ax.legend(title="Stimulation frequency")
 fig.tight_layout()
 fig.savefig("images/02-ssvep-signature_classes.png", dpi=200, bbox_inches="tight")
 plt.show()
 ```
 
-Each class lights up where it should: 9 Hz peaks at 9, 15 Hz peaks at 15, and where the fundamental brushes alpha — 10 and 12 Hz — the second harmonic at 20 and 24 Hz takes over as the dominant feature. That's a useful preview: a classifier doesn't have to bet on the fundamental alone. The four frequencies were chosen so no two classes share a low-order harmonic and so the highest still leaves Nyquist headroom (fs = 256 Hz, 4× the highest stim freq), which keeps the spectrum non-overlapping enough that simple peak-reading is plausible. We come back to this in Ch 5 (features) and Ch 7 (classification).
+Each class lights up where it should: 9 Hz peaks at 9, 15 Hz peaks at 15, and where the fundamental brushes alpha — 10 and 12 Hz — the second harmonic at 20 and 24 Hz takes over as the dominant feature. That's a useful preview: a classifier doesn't have to bet on the fundamental alone. The four frequencies were chosen so no two classes share a low-order harmonic and so the highest still leaves Nyquist headroom (fs = 256 Hz, 4× the highest stimulation frequency), which keeps the spectrum non-overlapping enough that simple peak-reading is plausible. We come back to this in Ch 5 (features) and Ch 7 (classification).
