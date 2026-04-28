@@ -7,3 +7,5 @@ __pycache__/
 /*.html
 /*_files/
 /site_libs/
+/images/*
+!/images/.gitkeep

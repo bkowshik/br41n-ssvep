@@ -72,7 +72,7 @@ def plot_session(path):
 ```{python}
 #| label: fig-s1-r1
 #| fig-cap: "Subject 1, run 1."
-plot_session(DATA_DIR / "subject_1_fvep_led_training_1.mat")
+plot_session(path = DATA_DIR / "subject_1_fvep_led_training_1.mat")
 ```
 
 Twenty stimulation blocks on CH10, evenly split across the four frequencies. CH11 is the standout: it only ever outputs class 3, regardless of which LED is flashing. The LDA in this session is broken in some way — we'll come back to it in Ch 7 when we evaluate the baseline trial by trial.
@@ -95,7 +95,7 @@ Same trial structure — twenty balanced blocks. CH11 now fires three of the fou
 plot_session(DATA_DIR / "subject_2_fvep_led_training_1.mat")
 ```
 
-CH11 covers all four classes here, and fires for a much larger fraction of samples than either subject-1 session — the LDA is genuinely *trying* in this run. The flip side: a couple of EEG channels (notably PO3 and O1) push well past the ±50 µV clip throughout, which usually points at electrode contact issues rather than brain signal.
+CH11 covers all four classes here, and fires for a much larger fraction of samples than either subject-1 session — the LDA is genuinely *trying* in this run. The flip side: data quality is poor. PO3 and O1 hit the ±50 µV clip throughout, and the occipital channels (Oz, O2) degrade further past the ~120 s mark — by the second half of the session their panels are essentially solid blocks of saturation. Only POz, PO4, and PO8 stay reasonably contained. Sustained clipping on that many channels usually points at electrode contact issues (high impedance, sweat bridges) rather than brain signal, which is why this run isn't the running example for later chapters.
 
 ### Subject 2 x Run 2
 

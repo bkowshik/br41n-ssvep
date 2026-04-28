@@ -1,7 +1,7 @@
-# About this book {.unnumbered}
+# About {.unnumbered}
 
 ::: {.callout-note}
-Developed as a submission to the **2026 SSVEP data analysis hackathon** at [br41n.io Spring School 2026](https://www.br41n.io/Spring-School-2026), organised by g.tec.
+Developed as a submission to SSVEP Data Analysis hackathon at [br41n.io Spring School 2026](https://www.br41n.io/Spring-School-2026), organised by g.tec
 :::
 
 ::: {.callout-tip}
@@ -14,7 +14,9 @@ A code-first walkthrough of the br41n.io SSVEP dataset, structured around the ca
 
 ![Stare at an LED flickering 9 times a second, and the EEG over your visual cortex grows a sharp peak at exactly 9 Hz — with a smaller echo at 18 Hz, its first harmonic. The brain literally hums along.](images/02-ssvep-signature_psd.png)
 
-That spike is the entire trick behind this book. Flicker four lights at four different frequencies, look at one of them, and the EEG "echoes" the frequency you're staring at. Read that echo, and you know which light the person picked — a brain–computer interface (BCI) with no surgery, no training, and not much hardware. This is **SSVEP**: Steady-State Visual Evoked Potentials.
+That spike is the entire trick behind this analysis. Flicker four lights at four different frequencies, look at one of them, and the EEG "echoes" the frequency you're staring at. Read that echo, and you know which light the person picked — a brain–computer interface (BCI) with no surgery, no training, and not much hardware. This is **SSVEP**: Steady-State Visual Evoked Potentials.
+
+Getting from raw EEG to that clean spike is what the first six chapters walk through. [Chapter 1](01-recordings.qmd) opens the `.mat` files and shows what raw EEG even looks like; [Chapter 2](02-ssvep-signature.qmd) finds the spike above; [Chapter 3](03-filtering.qmd) filters out everything that isn't it; [Chapter 4](04-epoching.qmd) chops the recording into per-trial epochs using the trigger channel; [Chapters 5](05-spectral-features.qmd) and [6](06-template-features.qmd) turn each epoch into features — spectral peaks and CCA/FBCCA templates — that a classifier can act on.
 
 ## And it actually works
 
@@ -22,26 +24,24 @@ That spike is the entire trick behind this book. Flicker four lights at four dif
 
 Going from the squiggly raw EEG to a 95%-accurate four-way classifier is what the chapters walk through — one runnable artifact at a time. By the end of [Chapter 7](07-classification.qmd) you've built that bar chart yourself; [Chapter 8](08-time-accuracy-itr.qmd) asks how *fast* the BCI can communicate; [Chapter 9](09-subjects.qmd) asks how well it generalises across people.
 
-## What is SSVEP?
-
-Steady-State Visual Evoked Potentials. When someone stares at a light flickering at frequency *f*, their visual cortex produces an EEG response that oscillates at the same frequency. By flickering several lights at distinguishable frequencies and reading the EEG, a brain–computer interface can tell which light the person is looking at — and use that as an input signal.
 
 ## What's in the dataset
 
 - **2 subjects**, **2 training sessions each** — four `.mat` recordings in `data/`.
 - **8 EEG channels** clustered over visual cortex (PO7, PO3, POz, PO4, PO8, O1, Oz, O2), sampled at 256 Hz.
 - **4 stimulation frequencies**: 9, 10, 12, 15 Hz, delivered by an LED array (fVEP-LED).
-- A **trigger channel** marking which frequency is active, and a **pre-computed LDA prediction** from g.tec's pipeline that we use as a baseline.
+- A **trigger channel** marking which frequency is active.
+- A **pre-computed LDA prediction** from g.tec's pipeline that we use as a baseline.
 
 ## How the book is structured
 
 | Part | Chapters |
 |---|---|
-| **Data** | What's in the recordings, where the SSVEP shows up |
-| **Preprocessing** | Filtering, epoching from triggers |
-| **Feature Engineering** | Spectral features, CCA / FBCCA template features |
-| **Modelling** | Turning features into a class label |
-| **Evaluation** | Time vs. accuracy, ITR, inter-subject variability |
+| **Data** | [What's in the recordings](01-recordings.qmd), [where the SSVEP shows up](02-ssvep-signature.qmd) |
+| **Preprocessing** | [Filtering](03-filtering.qmd), [epoching from triggers](04-epoching.qmd) |
+| **Feature Engineering** | [Spectral features](05-spectral-features.qmd), [CCA / FBCCA template features](06-template-features.qmd) |
+| **Modelling** | [Turning features into a class label](07-classification.qmd) |
+| **Evaluation** | [Time vs. accuracy, ITR](08-time-accuracy-itr.qmd), [inter-subject variability](09-subjects.qmd) |
 
 ## How to read it
 
