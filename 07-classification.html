@@ -111,6 +111,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<script>
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="Ei Ni init zi Gi Nr Ui Xi Vi capture calculateEventProperties tn register register_once register_for_session unregister unregister_for_session an getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync ln identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty nn Qi createPersonProfile setInternalOrTestUser sn qi cn opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing Ji debug Fr rn getPageViewId captureTraceFeedback captureTraceMetric Bi".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('phc_wHedDdcdyJ5BfSpErd8TZ3BkDeUjs7SkgmvULZ955o4R', {
+      api_host: 'https://eu.i.posthog.com',
+      defaults: '2026-01-30',
+      person_profiles: 'identified_only', // or 'always' to create profiles for anonymous users as well
+  })
+</script>
 
 
 <link rel="stylesheet" href="custom.css">
@@ -339,7 +347,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="setup" class="level2" data-number="7.1">
 <h2 data-number="7.1" class="anchored" data-anchor-id="setup"><span class="header-section-number">7.1</span> Setup</h2>
 <p>Same pipeline as the previous chapters, condensed. We end with three things on hand: <code>epochs</code> (the trial tensor), <code>labels</code> (the trigger truth), and <code>y</code> itself (so we can also evaluate the CH11 baseline).</p>
-<div id="bad482ef" class="cell" data-execution_count="1">
+<div id="5765855f" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
@@ -426,7 +434,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="cca-argmax-the-no-training-classifier" class="level2" data-number="7.2">
 <h2 data-number="7.2" class="anchored" data-anchor-id="cca-argmax-the-no-training-classifier"><span class="header-section-number">7.2</span> CCA argmax — the no-training classifier</h2>
 <p>The four CCA scores from Ch 6 are <em>intrinsically class-comparable</em>: each measures correlation against a known reference, so picking the highest-scoring class needs no training. The feature extractor <em>is</em> the classifier.</p>
-<div id="a09f6741" class="cell" data-execution_count="2">
+<div id="ba584355" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build_template(freq, n_samples, fs, n_harmonics<span class="op">=</span>N_HARMONICS):</span>
@@ -487,7 +495,7 @@ Figure&nbsp;7.1: CCA-argmax confusion matrix. Cells show trial counts; cell shad
 <h2 data-number="7.3" class="anchored" data-anchor-id="lda-on-spectral-snr-features"><span class="header-section-number">7.3</span> LDA on spectral SNR features</h2>
 <p>CCA scores are class-comparable by construction. The spectral SNR features from Ch 5 are <em>not</em>: a row’s “SNR at 9 Hz on Oz” sits in a different coordinate from “SNR at 10 Hz on Oz”, and there’s no a priori reason their absolute values are aligned across trials and classes. A trained classifier learns that mapping. Linear discriminant analysis (LDA) — the same family of model g.tec used to produce CH11 — is the natural baseline.</p>
 <p>With only 20 trials and 64 features, we cross-validate leave-one-out: for each trial in turn, fit LDA on the other 19 and predict the held-out one.</p>
-<div id="1dc8b5f7" class="cell" data-execution_count="4">
+<div id="5e4a56aa" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> channel_psd(channel, fs, nperseg<span class="op">=</span>NPERSEG):</span>
@@ -561,7 +569,7 @@ Figure&nbsp;7.2: LDA on SNR features — leave-one-out predictions.
 <section id="the-ch11-baseline" class="level2" data-number="7.4">
 <h2 data-number="7.4" class="anchored" data-anchor-id="the-ch11-baseline"><span class="header-section-number">7.4</span> The CH11 baseline</h2>
 <p>CH11 is the LDA-class index that g.tec’s analysis tool wrote into the dataset at recording time — our shipped baseline. It fires intermittently (only when its confidence crosses a threshold), so per-trial prediction is the <em>mode</em> of the non-zero values within the trial window. The class indices map to frequencies via the parameters panel from Ch 1: <code>1 → 15 Hz, 2 → 12, 3 → 10, 4 → 9</code>.</p>
-<div id="a2cb015a" class="cell" data-execution_count="6">
+<div id="4382f595" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>CH11_TO_HZ <span class="op">=</span> {<span class="dv">1</span>: <span class="dv">15</span>, <span class="dv">2</span>: <span class="dv">12</span>, <span class="dv">3</span>: <span class="dv">10</span>, <span class="dv">4</span>: <span class="dv">9</span>}</span>
@@ -615,7 +623,7 @@ Figure&nbsp;7.3: CH11 baseline — per-trial mode of non-zero samples.
 </section>
 <section id="three-way-comparison" class="level2" data-number="7.5">
 <h2 data-number="7.5" class="anchored" data-anchor-id="three-way-comparison"><span class="header-section-number">7.5</span> Three-way comparison</h2>
-<div id="c77f564e" class="cell" data-execution_count="8">
+<div id="69c8af6f" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fbcca_class_scores(epoch, fs, freqs<span class="op">=</span>STIM_FREQS, sub_bands<span class="op">=</span>SUB_BANDS,</span>

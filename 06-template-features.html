@@ -111,6 +111,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<script>
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="Ei Ni init zi Gi Nr Ui Xi Vi capture calculateEventProperties tn register register_once register_for_session unregister unregister_for_session an getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync ln identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty nn Qi createPersonProfile setInternalOrTestUser sn qi cn opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing Ji debug Fr rn getPageViewId captureTraceFeedback captureTraceMetric Bi".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('phc_wHedDdcdyJ5BfSpErd8TZ3BkDeUjs7SkgmvULZ955o4R', {
+      api_host: 'https://eu.i.posthog.com',
+      defaults: '2026-01-30',
+      person_profiles: 'identified_only', // or 'always' to create profiles for anonymous users as well
+  })
+</script>
 
 
 <link rel="stylesheet" href="custom.css">
@@ -339,7 +347,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="setup-load-filter-epoch" class="level2" data-number="6.1">
 <h2 data-number="6.1" class="anchored" data-anchor-id="setup-load-filter-epoch"><span class="header-section-number">6.1</span> Setup: load, filter, epoch</h2>
 <p>Same pipeline as Ch 4 + 5; reproduced here so the chapter is self-contained.</p>
-<div id="0dfcddd9" class="cell" data-execution_count="1">
+<div id="1e0881e5" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
@@ -396,7 +404,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="reference-templates" class="level2" data-number="6.2">
 <h2 data-number="6.2" class="anchored" data-anchor-id="reference-templates"><span class="header-section-number">6.2</span> Reference templates</h2>
 <p>For each candidate stimulation frequency <em>f</em>, we build a synthetic reference signal — a small set of sines and cosines at <em>f</em> and its harmonics, sampled at the same length and rate as one epoch. CCA will then ask: which linear combination of the eight EEG channels correlates best with which linear combination of these reference signals?</p>
-<div id="c7dab4c3" class="cell" data-execution_count="2">
+<div id="cbc45161" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build_template(freq, n_samples, fs, n_harmonics<span class="op">=</span>N_HARMONICS):</span>
@@ -446,7 +454,7 @@ Figure&nbsp;6.1: Reference template for the 9 Hz class — fundamental sin/cos p
 <section id="scoring-an-epoch-with-cca" class="level2" data-number="6.3">
 <h2 data-number="6.3" class="anchored" data-anchor-id="scoring-an-epoch-with-cca"><span class="header-section-number">6.3</span> Scoring an epoch with CCA</h2>
 <p>Canonical correlation analysis finds the linear projection of the EEG channels and the linear projection of the template that are maximally correlated. We use only the largest canonical correlation (the first component) as the per-class score.</p>
-<div id="3f1bc2a2" class="cell" data-execution_count="4">
+<div id="e8d0fc30" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> cca_score(X, Y):</span>
@@ -547,12 +555,12 @@ Figure&nbsp;6.3: CCA scores for every (trial, candidate) pair. Rows are trials s
 <pre><code>Plain CCA argmax accuracy: 18/20 = 90%</code></pre>
 </div>
 </div>
-<p>90 % accuracy from a method that needed no training data. The two errors (visible in the heatmap as off-diagonal-block bright cells) are both 12 Hz trials confused with 9 or 10 Hz — the same alpha-overlap pattern we’ve been tracking since Ch 2. CCA partially handles alpha because it cares about the <em>phase</em> alignment between EEG and a 12 Hz template, not just the amount of 12 Hz power; but when alpha sits <em>next to</em> the stim frequency and the SSVEP response is weak, the alpha-driven channel mixture can correlate better with the wrong template.</p>
+<p>90 % accuracy from a method that needed no training data. The two errors (visible in the heatmap as off-diagonal-block bright cells) are both 12 Hz trials confused with 9 or 10 Hz — the same alpha-overlap pattern we’ve been tracking since Ch 2. CCA partially handles alpha because it cares about the <em>phase</em> alignment between EEG and a 12 Hz template, not just the amount of 12 Hz power; but when alpha sits <em>next to</em> the stimulation frequency and the SSVEP response is weak, the alpha-driven channel mixture can correlate better with the wrong template.</p>
 </section>
 <section id="filter-bank-cca" class="level2" data-number="6.5">
 <h2 data-number="6.5" class="anchored" data-anchor-id="filter-bank-cca"><span class="header-section-number">6.5</span> Filter-bank CCA</h2>
 <p>The standard fix is FBCCA: split the filtered EEG into multiple sub-bands, run CCA per sub-band against the same templates, and combine the per-band correlations into a single score per class. Each sub-band isolates one harmonic family — the lowest band sees the fundamental, the next band sees the second harmonic, and so on — so CCA in each band can lock onto its target without being washed out by the others.</p>
-<div id="1b6ddc8f" class="cell" data-execution_count="7">
+<div id="25729f4f" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>SUB_BANDS <span class="op">=</span> [(<span class="dv">6</span>, <span class="dv">14</span>), (<span class="dv">14</span>, <span class="dv">22</span>), (<span class="dv">22</span>, <span class="dv">30</span>), (<span class="dv">30</span>, <span class="dv">40</span>)]</span>
@@ -628,7 +636,7 @@ Figure&nbsp;6.4: Per-class scores for one of the trials plain CCA gets wrong —
   FBCCA scores: {9: np.float64(0.364), 10: np.float64(0.239), 12: np.float64(0.405), 15: np.float64(0.131)} → pick 12</code></pre>
 </div>
 </div>
-<div id="009dfb17" class="cell" data-execution_count="9">
+<div id="e6b65d10" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fb_mat <span class="op">=</span> np.stack([fbcca_class_scores(ep, fs) <span class="cf">for</span> ep <span class="kw">in</span> epochs])</span>

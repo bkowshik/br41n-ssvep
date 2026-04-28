@@ -91,6 +91,14 @@ div.csl-indent {
     "search-label": "Search"
   }
 }</script>
+<script>
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="Ei Ni init zi Gi Nr Ui Xi Vi capture calculateEventProperties tn register register_once register_for_session unregister unregister_for_session an getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync ln identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty nn Qi createPersonProfile setInternalOrTestUser sn qi cn opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing Ji debug Fr rn getPageViewId captureTraceFeedback captureTraceMetric Bi".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('phc_wHedDdcdyJ5BfSpErd8TZ3BkDeUjs7SkgmvULZ955o4R', {
+      api_host: 'https://eu.i.posthog.com',
+      defaults: '2026-01-30',
+      person_profiles: 'identified_only', // or 'always' to create profiles for anonymous users as well
+  })
+</script>
 
 
 <link rel="stylesheet" href="custom.css">
@@ -326,7 +334,7 @@ div.csl-indent {
 <p>The book’s a-priori plan and what the data actually showed disagreed in three places worth re-stating:</p>
 <ol type="1">
 <li><strong>The shipped baseline lied about which subject was “easier”.</strong> Subject 2 run 2 was picked as the running example in Ch 1 because its CH11 LDA looked clean. Subject 1 run 1’s CH11 was stuck on class 3 — the “broken” file. With our own CCA classifier the ranking inverts: subject 1 saturates at 100 % by 4 s, subject 2 reaches that only at 7 s. <strong>Don’t let the shipped baseline pick your favourite subject.</strong></li>
-<li><strong>Filtering on this dataset is mostly cosmetic, not corrective.</strong> Butterworth filters are flat in the passband by construction, so the alpha rhythm sitting on top of 9–12 Hz stim frequencies survives filtering untouched. What handles alpha is <em>features that care about phase</em> (CCA), not preprocessing.</li>
+<li><strong>Filtering on this dataset is mostly cosmetic, not corrective.</strong> Butterworth filters are flat in the passband by construction, so the alpha rhythm sitting on top of 9–12 Hz stimulation frequencies survives filtering untouched. What handles alpha is <em>features that care about phase</em> (CCA), not preprocessing.</li>
 <li><strong>For SSVEP, feature engineering is the classifier.</strong> A per-class CCA score is intrinsically class-comparable, so the “model” is just argmax. The work that distinguishes a 90 % pipeline from a 55 % one happens at the feature stage. Generic classifiers on top of generic features (LDA on amplitudes) leave most of the available structure on the table.</li>
 </ol>
 </section>
