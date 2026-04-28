@@ -17,6 +17,8 @@ book:
   title: "br41n.io - SSVEP Data Analysis"
   author: "Bhargav Kowshik"
   date: "2026-04-26"
+  sidebar:
+    logo: logo.png
   chapters:
     - index.qmd
     - part: "Data"
@@ -39,7 +41,6 @@ book:
         - 08-time-accuracy-itr.qmd
         - 09-subjects.qmd
     - summary.qmd
-  appendices:
     - acronyms.qmd
     - references.qmd
 
@@ -56,7 +57,8 @@ format:
     lightbox: auto
     fig-format: retina
     fig-dpi: 96
+    code-fold: true
     grid:
-      sidebar-width: 225px
+      sidebar-width: 300px
       body-width: 1000px
-      margin-width: 0px
+      margin-width: 250px

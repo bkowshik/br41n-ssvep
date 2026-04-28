@@ -1,8 +1,4 @@
----
-title: "Summary"
-description: "What we built across the canonical EEG pipeline, what we deliberately skipped, and where to go next."
-date-modified: 2026-04-26
----
+# Summary {.unnumbered}
 
 ## What we built
 
