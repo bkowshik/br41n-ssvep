@@ -63,7 +63,7 @@ fig.savefig("images/04-epoching_trigger_timeline.png", dpi=200, bbox_inches="tig
 plt.show()
 ```
 
-A clean step function. CH10 sits at zero between trials and steps to one of `{9, 10, 12, 15}` while a stim block is active. The plateaus look identical in width and the rests between them look identical too — that's the experimental schedule, hardcoded in g.tec's stimulator. The class sequence cycles `15 → 12 → 10 → 9` and repeats five times. None of this is documented in `data_description.txt`; everything we know about trial timing comes from staring at this one channel.
+A clean step function. CH10 sits at zero between trials and steps to one of `{9, 10, 12, 15}` while a stimulation block is active. The plateaus look identical in width and the rests between them look identical too — that's the experimental schedule, hardcoded in g.tec's stimulator. The class sequence cycles `15 → 12 → 10 → 9` and repeats five times. None of this is documented in `data_description.txt`; everything we know about trial timing comes from staring at this one channel.
 
 ## Detecting trial boundaries
 

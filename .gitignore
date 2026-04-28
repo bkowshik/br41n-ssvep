@@ -5,6 +5,7 @@
 __pycache__/
 **/*.quarto_ipynb
 /*.html
+!/posthog.html
 /*_files/
 /site_libs/
 /images/*

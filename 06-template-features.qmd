@@ -174,7 +174,7 @@ n_correct = (predictions == labels).sum()
 print(f"Plain CCA argmax accuracy: {n_correct}/{len(labels)} = {accuracy:.0%}")
 ```
 
-90 % accuracy from a method that needed no training data. The two errors (visible in the heatmap as off-diagonal-block bright cells) are both 12 Hz trials confused with 9 or 10 Hz — the same alpha-overlap pattern we've been tracking since Ch 2. CCA partially handles alpha because it cares about the *phase* alignment between EEG and a 12 Hz template, not just the amount of 12 Hz power; but when alpha sits *next to* the stim frequency and the SSVEP response is weak, the alpha-driven channel mixture can correlate better with the wrong template.
+90 % accuracy from a method that needed no training data. The two errors (visible in the heatmap as off-diagonal-block bright cells) are both 12 Hz trials confused with 9 or 10 Hz — the same alpha-overlap pattern we've been tracking since Ch 2. CCA partially handles alpha because it cares about the *phase* alignment between EEG and a 12 Hz template, not just the amount of 12 Hz power; but when alpha sits *next to* the stimulation frequency and the SSVEP response is weak, the alpha-driven channel mixture can correlate better with the wrong template.
 
 ## Filter-bank CCA
 

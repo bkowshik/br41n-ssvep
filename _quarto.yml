@@ -48,6 +48,8 @@ bibliography: references.bib
 
 format:
   html:
+    include-in-header:
+      - posthog.html
     theme:
       - cosmo
       - brand
