@@ -347,7 +347,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="setup-load-filter-epoch" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="setup-load-filter-epoch"><span class="header-section-number">5.1</span> Setup: load, filter, epoch</h2>
 <p>The pipeline from Ch 3 + Ch 4 in compact form: load the running session, bandpass + notch the eight EEG channels, build the <code>(n_trials, 8, n_samples)</code> epoch tensor.</p>
-<div id="8fa25c4f" class="cell" data-execution_count="1">
+<div id="26ae673f" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
@@ -407,7 +407,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="from-an-epoch-to-a-feature-vector" class="level2" data-number="5.2">
 <h2 data-number="5.2" class="anchored" data-anchor-id="from-an-epoch-to-a-feature-vector"><span class="header-section-number">5.2</span> From an epoch to a feature vector</h2>
 <p>For each of the eight EEG channels we compute Welch’s PSD on the epoch, then read off the amplitude at each candidate stimulation frequency (9, 10, 12, 15 Hz) and its second harmonic (18, 20, 24, 30 Hz). That’s eight values per channel × eight channels = 64 features per trial.</p>
-<div id="12c47935" class="cell" data-execution_count="2">
+<div id="d4bc318e" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>NPERSEG <span class="op">=</span> <span class="dv">512</span>  <span class="co"># 0.5 Hz resolution at fs = 256 Hz</span></span>
@@ -543,7 +543,7 @@ Figure&nbsp;5.3: Sliding 1.5 s window (0.5 s hop) through the 7.5 s trial. Both 
 </section>
 <section id="the-feature-matrix-for-a-whole-session" class="level2" data-number="5.3">
 <h2 data-number="5.3" class="anchored" data-anchor-id="the-feature-matrix-for-a-whole-session"><span class="header-section-number">5.3</span> The feature matrix for a whole session</h2>
-<div id="b3912e2f" class="cell" data-execution_count="6">
+<div id="ae38aaaf" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>feat_matrix <span class="op">=</span> np.stack([epoch_features(epochs[i], fs) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(epochs))])</span>
@@ -603,7 +603,7 @@ Figure&nbsp;5.4: Feature matrix, rows sorted by stimulation class. Each row is o
 <section id="a-strawman-classifier" class="level2" data-number="5.4">
 <h2 data-number="5.4" class="anchored" data-anchor-id="a-strawman-classifier"><span class="header-section-number">5.4</span> A strawman classifier</h2>
 <p>Before reaching for fancier features, ask the simplest possible question: how far does raw power on its own get you? For each trial, sum the feature row over channels and harmonics per stimulation frequency, then pick the frequency with the most total power. No training, no normalization, no model — pure argmax over the matrix above.</p>
-<div id="c3727e80" class="cell" data-execution_count="8">
+<div id="42396b9e" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>power_per_freq <span class="op">=</span> feat_matrix.reshape(</span>
@@ -735,7 +735,7 @@ Note
 </div>
 </div>
 <p>What does the transformation actually <em>do</em>? Take a contrasting cell from the same trial: the 12 Hz feature on Oz has raw power 1.89 (small) but its neighbourhood includes the alpha bump near 10 Hz, so the neighbour mean is 6.13. Their ratio is 0.31 — well below 1, signalling “this bin sits <em>below</em> its surroundings”, i.e.&nbsp;there is no SSVEP peak at 12 Hz on this trial. Raw power can’t make that distinction; SNR can. The cell’s pre/post values: raw = 1.89, SNR = 0.31. Both numbers go into the heatmap as “low”, but the SNR version is more committed about it.</p>
-<div id="96524b63" class="cell" data-execution_count="11">
+<div id="29a739d2" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> snr_at(ff, pxx, f_target, half_bw_hz<span class="op">=</span><span class="fl">0.6</span>, neigh_hw_hz<span class="op">=</span><span class="fl">2.5</span>):</span>

@@ -352,7 +352,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="what-the-unfiltered-spectrum-looks-like" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="what-the-unfiltered-spectrum-looks-like"><span class="header-section-number">3.2</span> What the unfiltered spectrum looks like</h2>
-<div id="0a90959c" class="cell" data-execution_count="1">
+<div id="97032b1c" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
@@ -415,7 +415,7 @@ Figure&nbsp;3.1: Long-window PSD on Oz, full session, log-y axis.
 </section>
 <section id="designing-the-filter" class="level2" data-number="3.3">
 <h2 data-number="3.3" class="anchored" data-anchor-id="designing-the-filter"><span class="header-section-number">3.3</span> Designing the filter</h2>
-<div id="e69b812c" class="cell" data-execution_count="3">
+<div id="76652faf" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_filters(fs, low<span class="op">=</span><span class="fl">5.0</span>, high<span class="op">=</span><span class="fl">40.0</span>, line<span class="op">=</span><span class="fl">50.0</span>, order<span class="op">=</span><span class="dv">4</span>, notch_q<span class="op">=</span><span class="dv">30</span>):</span>
@@ -551,7 +551,7 @@ Figure&nbsp;3.4: Same 8-second window of Oz, raw vs filtered.
 <section id="frequency-vs-phase-a-small-demo" class="level2" data-number="3.7">
 <h2 data-number="3.7" class="anchored" data-anchor-id="frequency-vs-phase-a-small-demo"><span class="header-section-number">3.7</span> Frequency vs phase — a small demo</h2>
 <p>To make the phase point concrete, here’s a small synthetic demo: two sets of trials, every trial a 10 Hz sinusoid in noise. In one set every trial starts at the same phase — the SSVEP analogue, locked to a stimulus. In the other, each trial’s starting phase is drawn uniformly at random — the alpha analogue, spontaneous and unanchored.</p>
-<div id="2dde4b5d" class="cell" data-execution_count="7">
+<div id="f1f0b7de" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
@@ -614,7 +614,7 @@ Figure&nbsp;3.5: Two sets of synthetic 10 Hz trials in noise. Top: individual tr
 </div>
 <p>Individually, every trial in either column is a 10 Hz oscillation in noise — a per-trial PSD would put a peak at 10 Hz for both, and a frequency-only feature would call them indistinguishable. The difference only emerges once trials are combined: phase-locked trials reinforce each other and the average preserves the oscillation, while random-phase trials interfere destructively and the average collapses toward zero. The PSD discards exactly the information — phase — that separates the two. Methods that keep it (trial-averaging, template correlation, coherence with a stimulus reference) have something extra to work with; methods that don’t, don’t. Ch 6 develops this into a working classifier.</p>
 <p>To check whether the same effect actually shows up on the running session, swap the synthetic trials for the real ones. Bandpass Oz tightly around 10 Hz to isolate the alpha/SSVEP-at-10-Hz band, then for each of the five 10 Hz trials take two paired segments of equal length: the trial itself starting at the CH10 trigger edge (the SSVEP candidate) and the rest window immediately before that trigger (the alpha candidate, since the LED is still off and there’s no shared zero-time tying alpha to anything). Same n on both sides keeps the averaging comparison fair.</p>
-<div id="44aa8620" class="cell" data-execution_count="9">
+<div id="cfbae11b" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>bp_alpha <span class="op">=</span> butter(<span class="dv">4</span>, [<span class="dv">8</span>, <span class="dv">12</span>], btype<span class="op">=</span><span class="st">"band"</span>, fs<span class="op">=</span>fs)</span>

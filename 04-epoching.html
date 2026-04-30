@@ -348,7 +348,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="loading-and-filtering" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="loading-and-filtering"><span class="header-section-number">4.1</span> Loading and filtering</h2>
 <p>Same setup as Ch 3 — running example, filter chain applied to all eight EEG channels. CH10 (the trigger) and CH11 (the LDA output) are integer step functions; filtering would smear them, so we leave them alone.</p>
-<div id="a42c5f0d" class="cell" data-execution_count="1">
+<div id="d411be8a" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
@@ -424,7 +424,7 @@ Figure&nbsp;4.1: CH10 across the full session — the only document of trial str
 </section>
 <section id="detecting-trial-boundaries" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="detecting-trial-boundaries"><span class="header-section-number">4.3</span> Detecting trial boundaries</h2>
-<div id="c6d4ce88" class="cell" data-execution_count="3">
+<div id="f2016e01" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_trials(y):</span>
@@ -495,7 +495,7 @@ Figure&nbsp;4.2: Trial count per stimulation class.
 </section>
 <section id="building-the-epoch-tensor" class="level2" data-number="4.5">
 <h2 data-number="4.5" class="anchored" data-anchor-id="building-the-epoch-tensor"><span class="header-section-number">4.5</span> Building the epoch tensor</h2>
-<div id="76f68f53" class="cell" data-execution_count="5">
+<div id="fa794611" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> epoch(y_filt, trials, eeg_idx<span class="op">=</span><span class="bu">slice</span>(<span class="dv">1</span>, <span class="dv">9</span>)):</span>
